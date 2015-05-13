@@ -1,5 +1,8 @@
 # CDN test location
 
+This is an experimental implementation of Neubot CDN test (see [Neubot's
+specification](https://github.com/bassosimone/neubot-spec/) for more info).
+
 CODE STRUCTURE:
 
 1.main.py: main program 2 nested for cycle(for all dns server->for all hostname):
