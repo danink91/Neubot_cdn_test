@@ -1,6 +1,0 @@
-ppp-89-209.21-151.libero.it
-server-54-230-25-51.mxp4.r.cloudfront.net
-server-54-230-25-242.mxp4.r.cloudfront.net
-ppp-89-209.21-151.libero.it
-server-54-230-26-191.mxp4.r.cloudfront.net
-server-54-230-26-153.mxp4.r.cloudfront.net
