@@ -1,177 +1,159 @@
+#!/usr/bin/python
+"""This script is a test for CDN-test"""
 from twisted.internet import reactor
-import sys
 import json
 from twisted.names import client
-from twisted.internet import task,defer
-import socket
-import twisted.names.dns
 import time
 import datetime
 
+TYPEPTR = 12
+TYPEA = 1
+TYPEAAAA = 28
 class Answer(object):
-
-    def __init__(self, L,RL,dns):
-        ts = time.time()
-        self.timestamp=datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-        self.dns=dns        
-        self.L = L
-        self.RL=RL
-        
+    """This class is the complete answer"""
+    def __init__(self, L, RL, dns):
+        times = time.time()
+        self.timestamp = datetime.datetime.fromtimestamp(times).strftime('%Y-%m-%d %H:%M:%S')
+        self.dns = dns
+        self.lookup = L
+        self.rlookup = RL
     def __str__(self):
         content = []
         content.append({
-                         "timestamp": str(self.timestamp),
-                         "dns": str(self.dns),
-                         
-                         "name": str(self.L.name),
-                         "type": getattr(self.L, "type"),
-                         "class": self.L.cls,
-                         "ttl": self.L.ttl,
-                         "auth": self.L.auth,
-                         "payload": {"address" : str(self.L.payload.dottedQuad()),"ttl": self.L.payload.ttl, },
-		          
-	                     "nameR": str(self.RL.name),
-	                     "typeR": getattr(self.RL, "type"),
-	                     "classR": self.RL.cls,
-	                     "ttlR": self.RL.ttl,
-	                     "authR": self.RL.auth,
-	                     "payloadR":{"nameR" : str(self.RL.payload.name),"ttlR": self.RL.payload.ttl, }
-		        })
+            "timestamp": str(self.timestamp),
+            "dns": str(self.dns),
+
+            "name": str(self.lookup.name),
+            "type": getattr(self.lookup, "type"),
+            "class": self.lookup.cls,
+            "ttl": self.lookup.ttl,
+            "auth": self.lookup.auth,
+            "payload": {
+                "address" : str(self.lookup.payload.dottedQuad()),
+                "ttl": self.lookup.payload.ttl, },
+
+            "nameR": str(self.rlookup.name),
+            "typeR": getattr(self.rlookup, "type"),
+            "classR": self.rlookup.cls,
+            "ttlR": self.rlookup.ttl,
+            "authR": self.rlookup.auth,
+            "payloadR":{
+                "nameR" : str(self.rlookup.payload.name),
+                "ttlR": self.rlookup.payload.ttl, }
+            })
         return json.dumps(content, indent=2)
 
 class AnswersR(object):
-
-    def __init__(self, ans,auth,additional):
+    """This class is the list of Reverse Answers"""
+    def __init__(self, ans, auth, additional):
         self.ans = ans
-        self.auth=auth
-        self.additional=additional
+        self.auth = auth
+        self.additional = additional
     def __str__(self):
         content = []
         for elem in self.ans:
-	    if elem.type==12:
-	        content.append({
-	             "name": str(elem.name),
-	             "type": getattr(elem, "type"),
-	             "class": elem.cls,
-	             "ttl": elem.ttl,
-	             "auth": elem.auth,
-	             "payload":{"name" : str(elem.payload.name),"ttl": elem.payload.ttl, }
-		})
+            if elem.type == TYPEPTR:
+                content.append({
+                    "name" : str(elem.name),
+                    "type" : getattr(elem, "type"),
+                    "class": elem.cls,
+                    "ttl": elem.ttl,
+                    "auth": elem.auth,
+                    "payload":{
+                        "name" : str(elem.payload.name),
+                        "ttl": elem.payload.ttl, }
+                })
         return json.dumps(content, indent=2)
 
 class AnswersL(object):
-
-    def __init__(self, ans,auth,additional):
+    """This class is the list of Lookup Answers"""
+    def __init__(self, ans, auth, additional):
         self.ans = ans
-        self.auth=auth
-        self.additional=additional
+        self.auth = auth
+        self.additional = additional
 
     def __str__(self):
         content = []
         for elem in self.ans:
-            if elem.type==1:
+            if elem.type == TYPEA or elem.type == TYPEAAAA:
                 content.append({
-	                     "name": str(elem.name),
-	                     "type": getattr(elem, "type"),
-	                     "class": elem.cls,
-	                     "ttl": elem.ttl,
-	                     "auth": elem.auth,
-	                     "payload": str(elem.payload),
-		        })
+                    "name": str(elem.name),
+                    "type": getattr(elem, "type"),
+                    "class": elem.cls,
+                    "ttl": elem.ttl,
+                    "auth": elem.auth,
+                    "payload": str(elem.payload),
+                })
         return json.dumps(content, indent=2)
-    
-    def __repr__(self):
-        return 'MyClass #%d' % (self.id,)
 
-    def getAddressIPv4(self):
-        content=[]
+    def getaddressipv4(self):
+        """This function returns the list of ipv4 of the lookup answers"""
+        content = []
         for elem in self.ans:
-            if elem.type==1:
-                content.append( str(elem.payload.dottedQuad()))
+            if elem.type == TYPEA:
+                content.append(str(elem.payload.dottedQuad()))
         return content
-    def getAddressIPv6(self,orig):
-        content=[]
-        for elem in self.ans:
-            if elem.type==1:
-	            content.append( str(socket.inet_ntop(AF_INET6, elem.payload.address)))
-        return content
-    
-    
-        
-        
-class Getter(object):
 
+    def getaddressipv6(self):
+        """This function returns the list of ipv4 of the lookup answers"""
+        content = []
+        for elem in self.ans:
+            if elem.type == TYPEAAAA:
+                content.append(str(elem.payload.dottedQuad()))
+        return content
+
+class Functions(object):
+    """This class contains all function used for the test"""
     def __init__(self):
-        self._sequence = 0
         self._results = []
-        self._errors = []
 
-    def Result(self,resrev, res,ip,dns):
-        
-        res=AnswersL(res[0],res[1],res[2])
-        res=res.ans
-        ansrev=AnswersR(resrev[0],resrev[1],resrev[2])
-        ansrev=ansrev.ans
+    def dotest(self):
+        """main loop"""
+        for dns in DNSSERVERS:
+            for host in HOSTNAMES:
+                self.resolv(host, dns)
+
+    def result(self, resrev, res, ipaddr, dns):
+        """This function given build the Answer and prints it to stdout"""
+        res = AnswersL(res[0], res[1], res[2])
+        res = res.ans
+        ansrev = AnswersR(resrev[0], resrev[1], resrev[2])
+        ansrev = ansrev.ans
         for elemrev in ansrev:
-            for elem in res: 
-                
-                if elem.type==1 and str(elem.payload.dottedQuad())==ip:
-                    x=Answer(elem,elemrev,dns)
-                    return x
-     
-    
-    def Resolv(self, name,dns):
+            for elem in res:
+                if elem.type == TYPEA and str(elem.payload.dottedQuad()) == ipaddr:
+                    answer = Answer(elem, elemrev, dns)
+                    print answer
+                    return answer
+
+    def resolv(self, name, dns):
+        """This function performs the Lookup"""
         resolver = client.createResolver(servers=[(dns, 53)])
-        d = resolver.lookupAddress(name=name)
-        d.addCallback(self.revResolv,dns)
-        
-        
-
-    def revResolv(self, url,dns):
-        
-        x=AnswersL(url[0],url[1],url[2])
-        IP=x.getAddressIPv4()
-        for i in IP:
-            rev_name=reverseNameFromIPAddress(address=i)
-            d = client.lookupPointer(rev_name)
-            d.addCallback(self.Result,url,i,dns)
-            d.addCallbacks(self._on_success, self._on_error)
-            d.addCallback(self._on_finish)
-            self._sequence += 1
-        
-        
-
-    def _on_finish(self, *narg):
-        self._sequence -= 1
-        if not self._sequence:
-            reactor.stop()
-
-    _on_success = lambda self, res: self._results.append(res) 
-    _on_error = lambda self, err: self._errors.append(err)
-
+        defer = resolver.lookupAddress(name=name)
+        defer.addCallback(self.revresolv, dns)
+    def revresolv(self, url, dns):
+        """This function performs the Reverse Lookup for each ip of
+        lookup answer"""
+        answerl = AnswersL(url[0], url[1], url[2])
+        ipadd = answerl.getaddressipv4()
+        for i in ipadd:
+            rev_name = reversenamefromipaddress(address=i)
+            defer = client.lookupPointer(rev_name)
+            defer.addCallback(self.result, url, i, dns)
     def run(self):
+        """reactor run"""
         reactor.run()
-        return self._results, self._errors
 
-
-def reverseNameFromIPAddress(address):
+def reversenamefromipaddress(address):
+    """This function takes as input an address reverses it and
+    concatenates .in-addr.arpa"""
     return '.'.join(reversed(address.split('.'))) + '.in-addr.arpa'
 
+DNSSERVERS = ["8.8.8.8", "208.67.222.222"]
+HOSTNAMES = ["i.dailymail.co.uk", "www.polito.it"]
+test = Functions()
+for num in range(0, 5):
+    reactor.callLater(5*num, test.dotest)
 
-
-
-dnsservers=["8.8.8.8","208.67.222.222"]
-hostnames=["i.dailymail.co.uk", "www.polito.it","www.facebook.com"]
-
-
-
-g = Getter()
-for dns in dnsservers:
-            for host in hostnames:
-                g.Resolv(host,dns)
-
-
-results,errors=g.run()
-for x in results:
-        print x
-
+reactor.callLater(30, reactor.stop)
+test.run()
