@@ -16,11 +16,11 @@ TYPE_AAAA = dns.AAAA
 class Answer(object):
     """This class is the complete answer"""
 
-    def __init__(self, L, RL, dns):
+    def __init__(self, L, RL, server):
         times = time.time()
         self.timestamp = datetime.datetime.fromtimestamp(times).strftime(
             '%Y-%m-%d %H:%M:%S')
-        self.dns = dns
+        self.server = server
         self.lookup = L
         self.rlookup = RL
 
@@ -28,7 +28,7 @@ class Answer(object):
         content = []
         content.append({
             "timestamp": str(self.timestamp),
-            "dns": str(self.dns),
+            "server": str(self.server),
 
             "name": str(self.lookup.name),
             "type": getattr(self.lookup, "type"),
@@ -110,14 +110,13 @@ class AnswersL(object):
                 content.append(str(elem.payload.dottedQuad()))
         return content
 
-
 def dotest():
     """main loop"""
-    for dns in DNSSERVERS:
+    for server in DNSSERVERS:
         for host in HOSTNAMES:
-            resolv(host, dns)
+            resolv(host, server)
 
-def result(resrev, res, ipaddr, dns):
+def result(resrev, res, ipaddr, server):
     """This function builds the Answer and prints it to stdout"""
     res = AnswersL(res[0], res[1], res[2])
     res = res.ans
@@ -126,17 +125,17 @@ def result(resrev, res, ipaddr, dns):
     for elemrev in ansrev:
         for elem in res:
             if elem.type == TYPE_A and str(elem.payload.dottedQuad()) == ipaddr:
-                answer = Answer(elem, elemrev, dns)
+                answer = Answer(elem, elemrev, server)
                 print answer
                 return answer
 
-def resolv(name, dns):
+def resolv(name, server):
     """This function performs the Lookup"""
-    resolver = client.createResolver(servers=[(dns, 53)])
+    resolver = client.createResolver(servers=[(server, 53)])
     defer = resolver.lookupAddress(name=name)
-    defer.addCallback(revresolv, dns)
+    defer.addCallback(revresolv, server)
 
-def revresolv(url, dns):
+def revresolv(url, server):
     """This function performs the Reverse Lookup for each ip of
     lookup answer"""
     answerl = AnswersL(url[0], url[1], url[2])
@@ -144,7 +143,7 @@ def revresolv(url, dns):
     for i in ipadd:
         rev_name = reversenamefromipaddress(address=i)
         defer = client.lookupPointer(rev_name)
-        defer.addCallback(result, url, i, dns)
+        defer.addCallback(result, url, i, server)
 
 def reversenamefromipaddress(address):
     """This function takes as input an address reverses it and
