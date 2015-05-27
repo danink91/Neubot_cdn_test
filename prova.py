@@ -9,11 +9,13 @@ import datetime
 TYPEPTR = 12
 TYPEA = 1
 TYPEAAAA = 28
+
 class Answer(object):
     """This class is the complete answer"""
     def __init__(self, L, RL, dns):
         times = time.time()
-        self.timestamp = datetime.datetime.fromtimestamp(times).strftime('%Y-%m-%d %H:%M:%S')
+        self.timestamp = datetime.datetime.fromtimestamp(times).strftime(
+            '%Y-%m-%d %H:%M:%S')
         self.dns = dns
         self.lookup = L
         self.rlookup = RL
@@ -102,47 +104,41 @@ class AnswersL(object):
                 content.append(str(elem.payload.dottedQuad()))
         return content
 
-class Functions(object):
-    """This class contains all function used for the test"""
-    def __init__(self):
-        self._results = []
 
-    def dotest(self):
-        """main loop"""
-        for dns in DNSSERVERS:
-            for host in HOSTNAMES:
-                self.resolv(host, dns)
+def dotest():
+    """main loop"""
+    for dns in DNSSERVERS:
+        for host in HOSTNAMES:
+            resolv(host, dns)
 
-    def result(self, resrev, res, ipaddr, dns):
-        """This function given build the Answer and prints it to stdout"""
-        res = AnswersL(res[0], res[1], res[2])
-        res = res.ans
-        ansrev = AnswersR(resrev[0], resrev[1], resrev[2])
-        ansrev = ansrev.ans
-        for elemrev in ansrev:
-            for elem in res:
-                if elem.type == TYPEA and str(elem.payload.dottedQuad()) == ipaddr:
-                    answer = Answer(elem, elemrev, dns)
-                    print answer
-                    return answer
+def result(resrev, res, ipaddr, dns):
+    """This function builds the Answer and prints it to stdout"""
+    res = AnswersL(res[0], res[1], res[2])
+    res = res.ans
+    ansrev = AnswersR(resrev[0], resrev[1], resrev[2])
+    ansrev = ansrev.ans
+    for elemrev in ansrev:
+        for elem in res:
+            if elem.type == TYPEA and str(elem.payload.dottedQuad()) == ipaddr:
+                answer = Answer(elem, elemrev, dns)
+                print answer
+                return answer
 
-    def resolv(self, name, dns):
-        """This function performs the Lookup"""
-        resolver = client.createResolver(servers=[(dns, 53)])
-        defer = resolver.lookupAddress(name=name)
-        defer.addCallback(self.revresolv, dns)
-    def revresolv(self, url, dns):
-        """This function performs the Reverse Lookup for each ip of
-        lookup answer"""
-        answerl = AnswersL(url[0], url[1], url[2])
-        ipadd = answerl.getaddressipv4()
-        for i in ipadd:
-            rev_name = reversenamefromipaddress(address=i)
-            defer = client.lookupPointer(rev_name)
-            defer.addCallback(self.result, url, i, dns)
-    def run(self):
-        """reactor run"""
-        reactor.run()
+def resolv(name, dns):
+    """This function performs the Lookup"""
+    resolver = client.createResolver(servers=[(dns, 53)])
+    defer = resolver.lookupAddress(name=name)
+    defer.addCallback(revresolv, dns)
+
+def revresolv(url, dns):
+    """This function performs the Reverse Lookup for each ip of
+    lookup answer"""
+    answerl = AnswersL(url[0], url[1], url[2])
+    ipadd = answerl.getaddressipv4()
+    for i in ipadd:
+        rev_name = reversenamefromipaddress(address=i)
+        defer = client.lookupPointer(rev_name)
+        defer.addCallback(result, url, i, dns)
 
 def reversenamefromipaddress(address):
     """This function takes as input an address reverses it and
@@ -151,9 +147,9 @@ def reversenamefromipaddress(address):
 
 DNSSERVERS = ["8.8.8.8", "208.67.222.222"]
 HOSTNAMES = ["i.dailymail.co.uk", "www.polito.it"]
-test = Functions()
+
 for num in range(0, 5):
-    reactor.callLater(5*num, test.dotest)
+    reactor.callLater(5*num, dotest)
 
 reactor.callLater(30, reactor.stop)
-test.run()
+reactor.run()
