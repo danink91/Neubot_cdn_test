@@ -1,5 +1,7 @@
 #!/usr/bin/python
+
 """This script is a test for CDN-test"""
+
 from twisted.internet import reactor
 import json
 from twisted.names import client
@@ -12,6 +14,7 @@ TYPEAAAA = 28
 
 class Answer(object):
     """This class is the complete answer"""
+
     def __init__(self, L, RL, dns):
         times = time.time()
         self.timestamp = datetime.datetime.fromtimestamp(times).strftime(
@@ -19,6 +22,7 @@ class Answer(object):
         self.dns = dns
         self.lookup = L
         self.rlookup = RL
+
     def __str__(self):
         content = []
         content.append({
@@ -69,6 +73,7 @@ class AnswersR(object):
 
 class AnswersL(object):
     """This class is the list of Lookup Answers"""
+
     def __init__(self, ans, auth, additional):
         self.ans = ans
         self.auth = auth
