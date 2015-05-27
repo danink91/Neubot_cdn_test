@@ -110,12 +110,6 @@ class AnswersL(object):
                 content.append(str(elem.payload.dottedQuad()))
         return content
 
-def dotest():
-    """main loop"""
-    for server in DNSSERVERS:
-        for host in HOSTNAMES:
-            resolv(host, server)
-
 def result(resrev, res, ipaddr, server):
     """This function builds the Answer and prints it to stdout"""
     res = AnswersL(res[0], res[1], res[2])
@@ -150,8 +144,16 @@ def reversenamefromipaddress(address):
     concatenates .in-addr.arpa"""
     return '.'.join(reversed(address.split('.'))) + '.in-addr.arpa'
 
+# Code for using this module:
+
 DNSSERVERS = ["8.8.8.8", "208.67.222.222"]
 HOSTNAMES = ["i.dailymail.co.uk", "www.polito.it"]
+
+def dotest():
+    """main loop"""
+    for server in DNSSERVERS:
+        for host in HOSTNAMES:
+            resolv(host, server)
 
 for num in range(0, 5):
     reactor.callLater(5*num, dotest)
