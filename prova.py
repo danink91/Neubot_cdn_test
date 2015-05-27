@@ -5,12 +5,13 @@
 from twisted.internet import reactor
 import json
 from twisted.names import client
+from twisted.names import dns
 import time
 import datetime
 
-TYPEPTR = 12
-TYPEA = 1
-TYPEAAAA = 28
+TYPE_PTR = dns.PTR
+TYPE_A = dns.A
+TYPE_AAAA = dns.AAAA
 
 class Answer(object):
     """This class is the complete answer"""
@@ -58,7 +59,7 @@ class AnswersR(object):
     def __str__(self):
         content = []
         for elem in self.ans:
-            if elem.type == TYPEPTR:
+            if elem.type == TYPE_PTR:
                 content.append({
                     "name" : str(elem.name),
                     "type" : getattr(elem, "type"),
@@ -82,7 +83,7 @@ class AnswersL(object):
     def __str__(self):
         content = []
         for elem in self.ans:
-            if elem.type == TYPEA or elem.type == TYPEAAAA:
+            if elem.type == TYPE_A or elem.type == TYPE_AAAA:
                 content.append({
                     "name": str(elem.name),
                     "type": getattr(elem, "type"),
@@ -97,7 +98,7 @@ class AnswersL(object):
         """This function returns the list of ipv4 of the lookup answers"""
         content = []
         for elem in self.ans:
-            if elem.type == TYPEA:
+            if elem.type == TYPE_A:
                 content.append(str(elem.payload.dottedQuad()))
         return content
 
@@ -105,7 +106,7 @@ class AnswersL(object):
         """This function returns the list of ipv4 of the lookup answers"""
         content = []
         for elem in self.ans:
-            if elem.type == TYPEAAAA:
+            if elem.type == TYPE_AAAA:
                 content.append(str(elem.payload.dottedQuad()))
         return content
 
@@ -124,7 +125,7 @@ def result(resrev, res, ipaddr, dns):
     ansrev = ansrev.ans
     for elemrev in ansrev:
         for elem in res:
-            if elem.type == TYPEA and str(elem.payload.dottedQuad()) == ipaddr:
+            if elem.type == TYPE_A and str(elem.payload.dottedQuad()) == ipaddr:
                 answer = Answer(elem, elemrev, dns)
                 print answer
                 return answer
