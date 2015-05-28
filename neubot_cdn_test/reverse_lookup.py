@@ -37,8 +37,8 @@ class ReverseAnswer(object):
                 })
         return json.dumps(content, indent=2)
 
-class ReverseError(object):
-    """This class is the list of Reverse Answers"""
+class ReverseErrors(object):
+    """This class is the list of Reverse Errors"""
     def __init__(self,result):
         self.message = result.value.message
         
@@ -91,7 +91,7 @@ def reverse_lookup(address):
         outer_deferred.callback(ReverseAnswer(result))
 
     def wrap_error(error):
-        x=ReverseError(error)
+        x=ReverseErrors(error)
         outer_deferred.callback(x)
 
     rev_ip = reverse_ip_address(address=address)

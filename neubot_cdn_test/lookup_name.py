@@ -52,7 +52,7 @@ class LookupAnswer(object):
                 })
         return json.dumps(content, indent=2)
 
-    def join_ipv4_ipv6(self, ipv6):
+    def join_elements(self, ipv6):
         """Join result ipv4 and ip6"""
         for ip6 in ipv6.ans:
             self.ans.append(ip6)
@@ -74,46 +74,36 @@ class LookupAnswer(object):
         """ Returns the list of ipv4 of the lookup answer """
         return self._get_ipvx_addresses(dns.AAAA)
 
-class LookupErr(object):
-    """This class is the list of Reverse Answers"""
+class LookupErrors(object):
+    """This class is the list of Lookup Error"""
     def __init__(self,result):
-        self.message = result.value.message
-        self.message_add = ""
+        self.message=[]
+        self.message.append(result.value.message)
+
 
     def __str__(self):
         content = []
-        content.append({
-            "id" : str(self.message.id),
-            "rCode" : str(self.message.rCode),
-            "maxSize": str(self.message.maxSize),
-            "answer": str(self.message.answer),
-            "recDes": str(self.message.recDes),
-            "recAv": str(self.message.recAv),
-            "queries": str(self.message.queries),
-            "authority": str(self.message.authority),
-            "opCode": str(self.message.opCode),
-            "ns": str(self.message.ns),
-            "auth": str(self.message.auth),
-        })
-        if self.message_add!="":
+        for elem in self.message:
+            print elem
             content.append({
-                "id" : str(self.message_add.id),
-                "rCode" : str(self.message_add.rCode),
-                "maxSize": str(self.message_add.maxSize),
-                "answer": str(self.message_add.answer),
-                "recDes": str(self.message_add.recDes),
-                "recAv": str(self.message_add.recAv),
-                "queries": str(self.message_add.queries),
-                "authority": str(self.message_add.authority),
-                "opCode": str(self.message_add.opCode),
-                "ns": str(self.message_add.ns),
-                "auth": str(self.message_add.auth),
+                "id" : str(elem.id),
+                "rCode" : str(elem.rCode),
+                "maxSize": str(elem.maxSize),
+                "answer": str(elem.answer),
+                "recDes": str(elem.recDes),
+                "recAv": str(elem.recAv),
+                "queries": str(elem.queries),
+                "authority": str(elem.authority),
+                "opCode": str(elem.opCode),
+                "ns": str(elem.ns),
+                "auth": str(elem.auth),
             })
         return json.dumps(content, indent=2)
     
-    def join_ipv4_ipv6(self, ipv6):
+    def join_elements(self, error):
         """Join result ipv4 and ip6"""
-        self.message_add = ipv6.message
+        for err in error.message:
+            self.message.append(err)
         return self
 
 def lookup_name(server, name):
@@ -126,7 +116,7 @@ def lookup_name(server, name):
         outer_deferred.callback(LookupAnswer(result))
     
     def wrap_error(error):
-        x=LookupErr(error)
+        x=LookupErrors(error)
         outer_deferred.callback(x)
 
     inner_deferred = resolver.lookupAddress(name=name)
@@ -143,7 +133,7 @@ def lookup_name6(server, name):
         outer_deferred.callback(LookupAnswer(result))
 
     def wrap_error(error):
-        x=LookupErr(error)
+        x=LookupErrors(error)
         outer_deferred.callback(x)
 
     inner_deferred = resolver.lookupIPV6Address(name=name)
@@ -160,7 +150,7 @@ def lookup(server, name):
 
         def wrap_res(res):
             """ Wrap result returned by Twisted """
-            outer_deferred.callback(result.join_ipv4_ipv6(res))
+            outer_deferred.callback(result.join_elements(res))
 
         in_deferred = lookup_name6(server, name)
         in_deferred.addCallback(wrap_res)
