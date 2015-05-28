@@ -9,10 +9,8 @@
 
 
 from twisted.internet import defer
-
 from twisted.names import client
 from twisted.names import dns
-
 import json
 import logging
 import socket
@@ -54,6 +52,12 @@ class LookupAnswer(object):
                 })
         return json.dumps(content, indent=2)
 
+    def join_ipv4_ipv6(self,ipv6):
+        for ip in ipv6.ans:
+            self.ans.append(ip)
+        return self
+        
+
     def _get_ipvx_addresses(self, expected):
         """ Internal function to get addresses """
         content = []
@@ -70,15 +74,29 @@ class LookupAnswer(object):
         """ Returns the list of ipv4 of the lookup answer """
         return self._get_ipvx_addresses(dns.AAAA)
 
+def lookup(server,name):
+    """ This function performs the lookup """
+    outer_deferred = defer.Deferred()
+    def wrap_result(result):
+        """ Wrap result returned by Twisted """
+        d = defer.Deferred()
+        def wrap_res(res):
+            """ Wrap result returned by Twisted """
+            outer_deferred.callback(result.join_ipv4_ipv6(res))
+        d=lookup_name6( server, name)
+        d.addCallback(wrap_res)
+
+    inner_deferred = lookup_name(server, name)
+    inner_deferred.addCallback(wrap_result)
+    return outer_deferred
+
 def lookup_name(server, name):
     """ This function performs the lookup """
-    logging.debug("lookup_name: %s, %s", server, name)
     resolver = client.createResolver(servers=[(server, 53)])
     outer_deferred = defer.Deferred()
 
     def wrap_result(result):
         """ Wrap result returned by Twisted """
-        logging.debug("wrap_result: %s", result)
         outer_deferred.callback(LookupAnswer(result))
 
     inner_deferred = resolver.lookupAddress(name=name)
@@ -87,13 +105,11 @@ def lookup_name(server, name):
 
 def lookup_name6(server, name):
     """ This function performs the lookup """
-    logging.debug("lookup_name: %s, %s", server, name)
     resolver = client.createResolver(servers=[(server, 53)])
     outer_deferred = defer.Deferred()
 
     def wrap_result(result):
         """ Wrap result returned by Twisted """
-        logging.debug("wrap_result: %s", result)
         outer_deferred.callback(LookupAnswer(result))
 
     inner_deferred = resolver.lookupIPV6Address(name=name)
@@ -102,14 +118,11 @@ def lookup_name6(server, name):
 
 def main():
     """ Main function """
-    logging.basicConfig(level=logging.DEBUG, format="%(message)s")
     from twisted.internet import reactor
     import sys
-    deferred = lookup_name("8.8.8.8", sys.argv[1])
-
+    deferred = lookup("8.8.8.8", sys.argv[1])
     def print_result(result):
         """ Print result of name lookup """
-        logging.debug("print_result: %s", result)
         print result
         print result.get_ipv4_addresses()
         print result.get_ipv6_addresses()
