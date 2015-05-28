@@ -52,11 +52,11 @@ class LookupAnswer(object):
                 })
         return json.dumps(content, indent=2)
 
-    def join_ipv4_ipv6(self,ipv6):
-        for ip in ipv6.ans:
-            self.ans.append(ip)
+    def join_ipv4_ipv6(self, ipv6):
+        """Join result ipv4 and ip6"""
+        for ip6 in ipv6.ans:
+            self.ans.append(ip6)
         return self
-        
 
     def _get_ipvx_addresses(self, expected):
         """ Internal function to get addresses """
@@ -74,17 +74,17 @@ class LookupAnswer(object):
         """ Returns the list of ipv4 of the lookup answer """
         return self._get_ipvx_addresses(dns.AAAA)
 
-def lookup(server,name):
+def lookup(server, name):
     """ This function performs the lookup """
     outer_deferred = defer.Deferred()
     def wrap_result(result):
         """ Wrap result returned by Twisted """
-        d = defer.Deferred()
+        in_deferred = defer.Deferred()
         def wrap_res(res):
             """ Wrap result returned by Twisted """
             outer_deferred.callback(result.join_ipv4_ipv6(res))
-        d=lookup_name6( server, name)
-        d.addCallback(wrap_res)
+        in_deferred = lookup_name6(server, name)
+        in_deferred.addCallback(wrap_res)
 
     inner_deferred = lookup_name(server, name)
     inner_deferred.addCallback(wrap_result)
