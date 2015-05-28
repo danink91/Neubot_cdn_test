@@ -7,13 +7,10 @@
 
 """ Performs reverse lookup of an address """
 
-
-
 from twisted.internet import defer
-
 from twisted.names import client
 from twisted.names import dns
-
+from twisted.names import error
 import json
 import logging
 import socket
@@ -40,6 +37,28 @@ class ReverseAnswer(object):
                 })
         return json.dumps(content, indent=2)
 
+class ReverseError(object):
+    """This class is the list of Reverse Answers"""
+    def __init__(self,result):
+        self.message = result.value.message
+        
+    def __str__(self):
+        content = []
+        content.append({
+            "id" : str(self.message.id),
+            "rCode" : str(self.message.rCode),
+            "maxSize": str(self.message.maxSize),
+            "answer": str(self.message.answer),
+            "recDes": str(self.message.recDes),
+            "recAv": str(self.message.recAv),
+            "queries": str(self.message.queries),
+            "authority": str(self.message.authority),
+            "opCode": str(self.message.opCode),
+            "ns": str(self.message.ns),
+            "auth": str(self.message.auth),
+        })
+        return json.dumps(content, indent=2)
+
 def getquery(address):
     """Takes as input an address and processes ipv4 and ipv6 for DNSquery"""
     try:
@@ -52,34 +71,33 @@ def getquery(address):
             s=""    
             for i in address:
                 s=s+"."+i
-            return s[::-1]+'ip6.arpa'
+            return s[::-1]+'ip6.arpa.'
         except socket.error:
             print "error"
             return "error"
-    
 
 def reverse_ip_address(address):
     """This function takes as input an address gets the query"""
     query=getquery(address)
-    return query  
-    
-    
-    
+    return query     
 
 def reverse_lookup(address):
     """This function performs the Reverse Lookup for each ip of
     lookup answer"""
     outer_deferred = defer.Deferred()
+
     def wrap_result(result):
         """ Wrap result returned by Twisted """
-        logging.debug("wrap_result: %s", result)
         outer_deferred.callback(ReverseAnswer(result))
+
+    def wrap_error(error):
+        x=ReverseError(error)
+        outer_deferred.callback(x)
 
     rev_ip = reverse_ip_address(address=address)
     inner_deferred = client.lookupPointer(rev_ip)
-    inner_deferred.addCallback(wrap_result)
+    inner_deferred.addCallbacks(wrap_result,wrap_error)
     return outer_deferred
-
 
 def main():
     """ Main function """
