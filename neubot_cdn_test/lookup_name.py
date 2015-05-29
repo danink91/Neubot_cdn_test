@@ -109,19 +109,22 @@ class LookupErrors(object):
     def __str__(self):
         content = []
         for elem in self.message:
-            content.append({
-                "id" : str(elem.id),
-                "rCode" : str(elem.rCode),
-                "maxSize": str(elem.maxSize),
-                "answer": str(elem.answer),
-                "recDes": str(elem.recDes),
-                "recAv": str(elem.recAv),
-                "queries": str(elem.queries),
-                "authority": str(elem.authority),
-                "opCode": str(elem.opCode),
-                "ns": str(elem.ns),
-                "auth": str(elem.auth),
-            })
+            if elem.rCode == 3:
+                content.append({
+                    "id" : str(elem.id),
+                    "rCode" : str(elem.rCode),
+                    "maxSize": str(elem.maxSize),
+                    "answer": str(elem.answer),
+                    "recDes": str(elem.recDes),
+                    "recAv": str(elem.recAv),
+                    "queries": str(elem.queries),
+                    "authority": str(elem.authority),
+                    "opCode": str(elem.opCode),
+                    "ns": str(elem.ns),
+                    "auth": str(elem.auth),
+                })
+            else:
+                content.append(elem)
         return json.dumps(content, indent=2)
 
     def join_error(self, err):
@@ -137,7 +140,7 @@ class LookupErrors(object):
         return self
 
 def lookup_name4(server, name, factory=client.createResolver):
-    """ This function performs the lookup """
+    """ This function performs the lookup for ipv4 """
     resolver = factory(servers=[(server, 53)])
     outer_deferred = defer.Deferred()
 
@@ -154,7 +157,7 @@ def lookup_name4(server, name, factory=client.createResolver):
     return outer_deferred
 
 def lookup_name6(server, name, factory=client.createResolver):
-    """ This functiquale=?on performs the lookup """
+    """ This function performs the lookup for ipv6 """
     resolver = factory(servers=[(server, 53)])
     outer_deferred = defer.Deferred()
 
