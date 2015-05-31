@@ -52,23 +52,39 @@ class LookupAnswer(object):
             return socket.inet_ntop(socket.AF_INET6, elem.payload.address)
         else:
             raise RuntimeError
-
+    
     def __str__(self):
         content = []
         for elem in self.result[0]:
-            logging.debug("__str__: elem %s", elem)
-            if elem.type in (dns.A, dns.AAAA):
-                content.append({
-                    "name": str(elem.name),
-                    "type": getattr(elem, "type"),
-                    "class": elem.cls,
-                    "ttl": elem.ttl,
-                    "auth": elem.auth,
-                    "payload": {
-                        "address" : self._address_to_string(elem),
-                        "ttl": elem.payload.ttl,
-                    },
-                })
+            if hasattr(elem, 'type'):
+                if elem.type in (dns.A, dns.AAAA):
+                    content.append({
+                        "name": str(elem.name),
+                        "type": getattr(elem, "type"),
+                        "class": elem.cls,
+                        "ttl": elem.ttl,
+                        "auth": elem.auth,
+                        "payload": {
+                            "address" : self._address_to_string(elem),
+                            "ttl": elem.payload.ttl,
+                        },
+                    })
+            elif hasattr(elem, 'rCode'):
+                if elem.rCode == dns.ENAME:
+                    content.append({
+                        "id" : str(elem.id),
+                        "rCode" : str(elem.rCode),
+                        "maxSize": str(elem.maxSize),
+                        "answer": str(elem.answer),
+                        "recDes": str(elem.recDes),
+                        "recAv": str(elem.recAv),
+                        "queries": str(elem.queries),
+                        "authority": str(elem.authority),
+                        "opCode": str(elem.opCode),
+                        "ns": str(elem.ns),
+                        "auth": str(elem.auth),
+                    })
+                    
         return json.dumps(content, indent=2)
 
     def join_result(self, ipv6):
@@ -103,28 +119,40 @@ class LookupErrors(object):
     """This class is the list of Lookup Error"""
     def __init__(self, result):
         self.message = []
-        self.message.append(result.value.message)
-
+        self.message.append(result)
 
     def __str__(self):
         content = []
         for elem in self.message:
-            if elem.rCode == 3:
-                content.append({
-                    "id" : str(elem.id),
-                    "rCode" : str(elem.rCode),
-                    "maxSize": str(elem.maxSize),
-                    "answer": str(elem.answer),
-                    "recDes": str(elem.recDes),
-                    "recAv": str(elem.recAv),
-                    "queries": str(elem.queries),
-                    "authority": str(elem.authority),
-                    "opCode": str(elem.opCode),
-                    "ns": str(elem.ns),
-                    "auth": str(elem.auth),
-                })
+            if hasattr(elem.value.message, 'rCode'):
+                if elem.value.message.rCode == dns.ENAME:
+                    content.append({
+                        "id" : str(elem.value.message.id),
+                        "rCode" : str(elem.value.message.rCode),
+                        "maxSize": str(elem.value.message.maxSize),
+                        "answer": str(elem.value.message.answer),
+                        "recDes": str(elem.value.message.recDes),
+                        "recAv": str(elem.value.message.recAv),
+                        "queries": str(elem.value.message.queries),
+                        "authority": str(elem.value.message.authority),
+                        "opCode": str(elem.value.message.opCode),
+                        "ns": str(elem.value.message.ns),
+                        "auth": str(elem.value.message.auth),
+                    })
             else:
-                content.append(elem)
+                if hasattr(elem, 'type'):
+                    if elem.type in (dns.A, dns.AAAA):
+                        content.append({
+                            "name": str(elem.name),
+                            "type": getattr(elem, "type"),
+                            "class": elem.cls,
+                            "ttl": elem.ttl,
+                            "auth": elem.auth,
+                            "payload": {
+                                "address" : self._address_to_string(elem),
+                                "ttl": elem.payload.ttl,
+                            },
+                        })
         return json.dumps(content, indent=2)
 
     def join_error(self, err):
@@ -136,7 +164,7 @@ class LookupErrors(object):
     def join_result(self, res):
         """Join result ipv4 and ip6"""
         for res_add in res.result[0]:
-            self.message.append(res_add)
+            self.message.value.message.append(res_add)
         return self
 
 def lookup_name4(server, name, factory=client.createResolver):
