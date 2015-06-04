@@ -96,13 +96,13 @@ def reverse_ipv4(ipv4):
     return '.'.join(reverse_octets) + '.in-addr.arpa'
 
 def getquery(address):
-    """Takes as input an address and processes ipv4 and ipv6 for DNSquery"""   
+    """Takes as input an address and processes ipv4 and ipv6 for DNSquery"""
     try:
         socket.inet_aton(address)
         return reverse_ipv4(address)
     except socket.error:
-        print "not ipv4"
         try:
+            address = socket.inet_pton(socket.AF_INET6, address)
             return reverse_ipv6(address)
         except socket.error:
             return "IP not valid"
@@ -146,7 +146,7 @@ def main():
         print err.value
         reactor.stop()
 
-    deferred.addCallbacks(print_result,print_error)
+    deferred.addCallbacks(print_result, print_error)
     reactor.run()
 
 if __name__ == "__main__":
