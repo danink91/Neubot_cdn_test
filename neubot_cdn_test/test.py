@@ -3,45 +3,48 @@ from twisted.names import dns
 from twisted.internet import reactor
 import sys
 import socket
+import json
 
+class Results(object):
+    """ Wrapper for Result """
+
+    def __init__(self, names, dnsservers):
+        self.input = names
+        self.dns_servers= dnsservers
+        self.output = []
+
+    def __str__(self):
+        content = []
+        content.append({"input" : self.input,
+                        "dns_servers" : self.dns_servers,
+                        "output" : {
+                            "default_nameserver" : self.output[0],
+                            self.dns_servers[0] : { },##FIXME
+                            self.dns_servers[1] : { },
+                            "traceroute" : {},
+                            "whois" : {},
+                        },
+                    })
+        return json.dumps(content, indent=2)
+        
+    def add_default_dns(self, result):
+        self.output.append(result[0])
+
+    
+DNSSERVERS=["8.8.8.8","208.67.222.222"]
+HOSTNAMES=["i.dailymail.co.uk", "www.polito.it","www.facebook.com"]
 def main():
-
-    deferred = lookup_name.lookup_name("8.8.8.8", sys.argv[1])
+    x=Results(HOSTNAMES, DNSSERVERS)
+    deferred = lookup_name.lookup_name4("whoami.akamai.net", server="8.8.8.8")
     def print_result(result):
-        for i in result.result[0]:
-            if i.type == dns.A:
-                print socket.inet_ntop(socket.AF_INET, i.payload.address)
-                ipv4 = socket.inet_ntop(socket.AF_INET, i.payload.address)
-                d=reverse_lookup.reverse_lookup(ipv4)
-                def print_result(result):
-                    print result
-                    deferred = traceroute.tracert(ipv4)
-                    def print_result(result):
-                        """ Print result of name lookup """
-                        print result
-
-                    deferred.addCallback(print_result)
-
-                def print_error(err):
-                    print err
-
-                d.addCallbacks(print_result,print_error)
-            elif i.type == dns.AAAA:
-                ipv6 = socket.inet_ntop(socket.AF_INET6, i.payload.address)   
-                print socket.inet_ntop(socket.AF_INET6, i.payload.address)            
-                d=reverse_lookup.reverse_lookup(ipv6)
-                def print_result(result):
-                    print result
-                           
+        x.add_default_dns(result.get_ipv4_addresses())
+        print x
+        
 
     def print_error(err):
         print err.value
 
-
-
-
     deferred.addCallbacks(print_result,print_error)
-
     reactor.run()
 if __name__ == "__main__":
     main()
