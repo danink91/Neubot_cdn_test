@@ -52,7 +52,7 @@ class LookupAnswer(object):
             return socket.inet_ntop(socket.AF_INET6, elem.payload.address)
         else:
             raise RuntimeError
-    
+
     def __str__(self):
         content = []
         for elem in self.result[0]:
@@ -69,35 +69,7 @@ class LookupAnswer(object):
                             "ttl": elem.payload.ttl,
                         },
                     })
-            elif hasattr(elem, 'rCode'):
-                if elem.rCode == dns.ENAME:
-                    content.append({
-                        "id" : str(elem.id),
-                        "rCode" : str(elem.rCode),
-                        "maxSize": str(elem.maxSize),
-                        "answer": str(elem.answer),
-                        "recDes": str(elem.recDes),
-                        "recAv": str(elem.recAv),
-                        "queries": str(elem.queries),
-                        "authority": str(elem.authority),
-                        "opCode": str(elem.opCode),
-                        "ns": str(elem.ns),
-                        "auth": str(elem.auth),
-                    })
-                    
         return json.dumps(content, indent=2)
-
-    def join_result(self, ipv6):
-        """Join result ipv4 and ip6"""
-        for ip6 in ipv6.result[0]:
-            self.result[0].append(ip6)
-        return self
-
-    def join_error(self, err):
-        """Join result ipv4 and ip6"""
-        for err_add in err.message:
-            self.result[0].append(err_add)
-        return self
 
     def _get_ipvx_addresses(self, expected):
         """ Internal function to get addresses """
@@ -139,37 +111,19 @@ class LookupErrors(object):
                         "ns": str(elem.value.message.ns),
                         "auth": str(elem.value.message.auth),
                     })
+                else:
+                    content.append({"error" : str(elem.value),})
             else:
-                if hasattr(elem, 'type'):
-                    if elem.type in (dns.A, dns.AAAA):
-                        content.append({
-                            "name": str(elem.name),
-                            "type": getattr(elem, "type"),
-                            "class": elem.cls,
-                            "ttl": elem.ttl,
-                            "auth": elem.auth,
-                            "payload": {
-                                "address" : self._address_to_string(elem),
-                                "ttl": elem.payload.ttl,
-                            },
-                        })
+                content.append({"error" : str(elem.value),})
         return json.dumps(content, indent=2)
 
-    def join_error(self, err):
-        """Join result ipv4 and ip6"""
-        for err_add in err.message:
-            self.message.append(err_add)
-        return self
 
-    def join_result(self, res):
-        """Join result ipv4 and ip6"""
-        for res_add in res.result[0]:
-            self.message.value.message.append(res_add)
-        return self
-
-def lookup_name4(server, name, factory=client.createResolver):
+def lookup_name4(name, server=None, factory=client.createResolver):
     """ This function performs the lookup for ipv4 """
-    resolver = factory(servers=[(server, 53)])
+    if server != None:
+        resolver = factory(servers=[(server, 53)])
+    else:
+        resolver = factory()
     outer_deferred = defer.Deferred()
 
     def wrap_result(result):
@@ -184,9 +138,12 @@ def lookup_name4(server, name, factory=client.createResolver):
     inner_deferred.addCallbacks(wrap_result, wrap_error)
     return outer_deferred
 
-def lookup_name6(server, name, factory=client.createResolver):
+def lookup_name6(name, server=None, factory=client.createResolver):
     """ This function performs the lookup for ipv6 """
-    resolver = factory(servers=[(server, 53)])
+    if server != None:
+        resolver = factory(servers=[(server, 53)])
+    else:
+        resolver = factory()
     outer_deferred = defer.Deferred()
 
     def wrap_result(result):
@@ -201,49 +158,12 @@ def lookup_name6(server, name, factory=client.createResolver):
     inner_deferred.addCallbacks(wrap_result, wrap_error)
     return outer_deferred
 
-
-def lookup_name(server, name, factory=client.createResolver):
-    """ This function performs the lookup """
-    outer_deferred = defer.Deferred()
-    def wrap_result(result):
-        """ Wrap result returned by Twisted """
-        in_deferred = defer.Deferred()
-
-        def wrap_res(res):
-            """ Wrap result returned by Twisted """
-            outer_deferred.callback(result.join_result(res))
-
-        def wrap_err(err_ipv6):
-            """ Wrap err_ipv6 returned by Twisted """
-            outer_deferred.errback(result.join_error(err_ipv6.value))
-
-        in_deferred = lookup_name6(server, name, factory)
-        in_deferred.addCallbacks(wrap_res, wrap_err)
-
-    def wrap_error(err_ipv4):
-        """ Wrap err_ipv4 returned by Twisted """
-        in_deferred = defer.Deferred()
-        def wrap_res(res):
-            """ Wrap result returned by Twisted """
-            outer_deferred.callback(err_ipv4.value.join_result(LookupAnswer(res)))
-
-        def wrap_err(err_ipv6):
-            """ Wrap err_ipv6 returned by Twisted """
-            outer_deferred.errback(err_ipv4.value.join_error(err_ipv6.value))
-
-        in_deferred = lookup_name6(server, name, factory)
-        in_deferred.addCallbacks(wrap_res, wrap_err)
-
-    inner_deferred = lookup_name4(server, name, factory)
-    inner_deferred.addCallbacks(wrap_result, wrap_error)
-    return outer_deferred
-
 def main():
     """ Main function """
     from twisted.internet import reactor
     import sys
-
-    deferred = lookup_name("8.8.8.8", sys.argv[1])
+    #deferred = lookup_name4(sys.argv[1], server="8.8.8.8")
+    deferred = lookup_name4(sys.argv[1], server="8.8.8.8")
     def print_result(result):
         """ Print result of name lookup """
         print result

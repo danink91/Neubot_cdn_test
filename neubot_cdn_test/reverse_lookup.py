@@ -37,7 +37,7 @@ from twisted.names import error
 import json
 import logging
 import socket
-import ipaddress
+import ipaddress_local
 
 class ReverseAnswer(object):
     """This class is the list of Reverse Answers"""
@@ -85,7 +85,7 @@ def reverse_ipv6(ipv6):
 
     """Return the reverse DNS pointer name for the IPv6 address.
     This implements the method described in RFC3596 2.5. """
-    reverse_chars = ipaddress.ip_address(ipv6).exploded[::-1].replace(':', '')
+    reverse_chars = ipaddress_local.ip_address(ipv6).exploded[::-1].replace(':', '')
     return '.'.join(reverse_chars) + '.ip6.arpa'
 
 def reverse_ipv4(ipv4):
