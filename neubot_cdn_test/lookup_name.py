@@ -118,12 +118,12 @@ class LookupErrors(object):
         return json.dumps(content, indent=2)
 
 
-def lookup_name4(name, server=None, factory=client.createResolver):
+def lookup_name4(name, server=None):
     """ This function performs the lookup for ipv4 """
     if server != None:
-        resolver = factory(servers=[(server, 53)])
+        resolver = client.Resolver(servers=[(server, 53)])
     else:
-        resolver = factory()
+        resolver = client.createResolver()
     outer_deferred = defer.Deferred()
 
     def wrap_result(result):
@@ -138,12 +138,12 @@ def lookup_name4(name, server=None, factory=client.createResolver):
     inner_deferred.addCallbacks(wrap_result, wrap_error)
     return outer_deferred
 
-def lookup_name6(name, server=None, factory=client.createResolver):
+def lookup_name6(name, server=None):
     """ This function performs the lookup for ipv6 """
     if server != None:
-        resolver = factory(servers=[(server, 53)])
+        resolver = client.Resolver(servers=[(server, 53)])
     else:
-        resolver = factory()
+        resolver = client.createResolver()
     outer_deferred = defer.Deferred()
 
     def wrap_result(result):
@@ -162,7 +162,7 @@ def main():
     """ Main function """
     from twisted.internet import reactor
     import sys
-    #deferred = lookup_name4(sys.argv[1], server="8.8.8.8")
+    #deferred = lookup_name4(sys.argv[1])
     deferred = lookup_name4(sys.argv[1], server="8.8.8.8")
     def print_result(result):
         """ Print result of name lookup """
