@@ -19,13 +19,23 @@ class TaskRunner(object):
         self.dns_servers = []
         self.results = {}
         self._code = []
+        self.counter = 0
+        self.maxcounter = 20
 
     def get_next_operations(self):
         """ Return some operations to run next """
         # TODO: use deque for efficiency
-        retval = self._code[:4]
-        self._code = self._code[4:]
+        print "active: ", self.counter
+        avail = min(self.maxcounter-self.counter, len(self._code))
+        retval = self._code[:avail]
+        self._code = self._code[avail:]
+        self.counter = self.counter+avail
+
         return retval
+
+    def decrease_counter(self):
+        """decrease counter"""
+        self.counter = self.counter-1
 
     def no_more_operations(self):
         """check if there are no more operation"""
@@ -39,8 +49,13 @@ class TaskRunner(object):
         """ Execture operations using reactor """
         # Note: this could also be a method of TaskRunner
         if not self.no_more_operations():
-            reactor.callLater(4, self.execute)
+            reactor.callLater(0.5, self.execute)
             for func, args in self.get_next_operations():
                 reactor.callLater(0, func, *args)
         else:
-            reactor.stop()
+            print "no more operation,but counter = ", self.counter
+            if self.counter > 0:
+                reactor.callLater(0.5, self.execute)
+            else:
+                reactor.stop()
+
