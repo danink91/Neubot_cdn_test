@@ -1,89 +1,71 @@
 """ Post processing of mydata"""
 import pickle
 import sqlite3
-
-class State(object):
-    """state of my test"""
-
-    def __init__(self):
-        self.names = []
-        self.dns_servers = []
-        self.results = {}
-        self._code = []
-
-    def get_next_operations(self):
-        """ Return some operations to run next """
-        retval = self._code[:4]
-        self._code = self._code[4:]
-        return retval
-
-    def no_more_operations(self):
-        """check if there are no more operation"""
-        return len(self._code) == 0
-
-    def add_operation(self, function, args):
-        """Add an operation in _code"""
-        self._code.append((function, args))
+import task_runner
 
 def get_ip(address):
     """return ip"""
     return str(address['payload']['address'])
 
-def get_hop(ipaddr, state):
+def get_hop(ipaddr, runner):
     """return hop"""
-    hop = len(state.results["traceroute"][ipaddr].split('\n')[1:])
+    hop = len(runner.results["traceroute"][ipaddr].split('\n')[1:])
     if hop == 0:
         hop = "NULL"
     return hop
 
-def get_asnum(ipaddr, state):
+def get_asnum(ipaddr, runner):
     """return asnum"""
-    for line in state.results["whois"][ipaddr].split('\n'):
+    for line in runner.results["whois"][ipaddr].split('\n'):
         if line[:7] == "origin:":
             return line[8:].split(' ')[-1]
 
-def get_reverse_ipv4(ipaddr, state, server):
+def get_reverse_ipv4(ipaddr, runner, server):
     """return revA"""
-    for result in state.results[server]["ReverseA"][ipaddr]:
+    for result in runner.results[server]["ReverseA"][ipaddr]:
         if result:
             return result['payload']['name']
 
-def get_reverse_ipv6(ipaddr, state, server):
+def get_reverse_ipv6(ipaddr, runner, server):
     """return revAAAA"""
-    for result in state.results[server]["ReverseAAAA"][ipaddr]:
+    for result in runner.results[server]["ReverseAAAA"][ipaddr]:
         if result:
             return result['payload']['name']
 
 
 def main():
     """ Main function """
+    import glob
+    
+
     con = sqlite3.connect('example.db')
     num = 0
     with con:
         cur = con.cursor()
         cur.execute("DROP TABLE IF EXISTS Mydata")
         cur.execute("CREATE TABLE Mydata(Id INTEGER PRIMARY KEY AUTOINCREMENT, Timestamp TIMESTAMP, Server VARCHAR(30), Name VARCHAR(30), CName VARCHAR(30), IP VARCHAR(15),  Reverse VARCHAR(30),Num INT, ASN INT, Hop INT);")
-        with open('data.pkl', 'rb') as input_data:
-            state = pickle.load(input_data)
-        for server in state.dns_servers:
-            for name in state.names:
-                ##IPV4
-                for address in state.results[server]["A"][name]:
-                    ipaddr = get_ip(address)
-                    hop = get_hop(ipaddr, state)
-                    asnum = get_asnum(ipaddr, state)
-                    reverse = get_reverse_ipv4(ipaddr, state, server)
+        for filename in glob.glob('*.pkl'):
+            with open(filename, 'rb') as input_data:
+                runner = pickle.load(input_data)
+            for server in runner.dns_servers:
+                for name in runner.names:
+                    ##IPV4
+                    for address in runner.results[server]["A"][name]:
+                        ipaddr = get_ip(address)
+                        hop = get_hop(ipaddr, runner)
+                        asnum = get_asnum(ipaddr, runner)
+                        reverse = get_reverse_ipv4(ipaddr, runner, server)
 
-                    cur.execute("INSERT INTO Mydata(Timestamp,Server,Name,CName,IP,Reverse,Num,ASN,Hop) VALUES(datetime('NOW','localtime'),'"+server+"','"+name+"','"+address['name']+"','"+ipaddr+"','"+reverse+"','"+str(num)+"','"+str(asnum)+"','"+str(hop)+"');")
+                        cur.execute("INSERT INTO Mydata(Timestamp,Server,Name,CName,IP,Reverse,Num,ASN,Hop) VALUES(datetime('NOW','localtime'),'"+server+"','"+name+"','"+address['name']+"','"+ipaddr+"','"+reverse+"','"+str(num)+"','"+str(asnum)+"','"+str(hop)+"');")
 
-                ##IPV6
-                for address in state.results[server]["AAAA"][name]:
-                    ipaddr = get_ip(address)
-                    hop = get_hop(ipaddr, state)
-                    asnum = get_asnum(ipaddr, state)
-                    reverse = get_reverse_ipv6(ipaddr, state, server)
+                    ##IPV6
+                    for address in runner.results[server]["AAAA"][name]:
+                        ipaddr = get_ip(address)
+                        hop = get_hop(ipaddr, runner)
+                        asnum = get_asnum(ipaddr, runner)
+                        reverse = get_reverse_ipv6(ipaddr, runner, server)
 
-                    cur.execute("INSERT INTO Mydata(Timestamp,Server,Name,CName,IP,Reverse,Num,ASN,Hop) VALUES(datetime('NOW','localtime'),'"+server+"','"+name+"','"+address['name']+"','"+ipaddr+"','"+reverse+"','"+str(num)+"','"+str(asnum)+"','"+str(hop)+"');")
+                        cur.execute("INSERT INTO Mydata(Timestamp,Server,Name,CName,IP,Reverse,Num,ASN,Hop) VALUES(datetime('NOW','localtime'),'"+server+"','"+name+"','"+address['name']+"','"+ipaddr+"','"+reverse+"','"+str(num)+"','"+str(asnum)+"','"+str(hop)+"');")
 
 
 if __name__ == "__main__":
