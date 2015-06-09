@@ -36,8 +36,6 @@ def get_reverse_ipv6(ipaddr, runner, server):
 def main():
     """ Main function """
     import glob
-    
-
     con = sqlite3.connect('example.db')
     num = 0
     with con:
