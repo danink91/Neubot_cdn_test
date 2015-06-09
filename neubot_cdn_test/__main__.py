@@ -10,7 +10,10 @@
 from twisted.internet import reactor
 from . import lookup_name, reverse_lookup, traceroute, whois, \
               task_runner
+import logging
 import pprint
+
+logging.basicConfig(level=logging.DEBUG)
 
 DNSSERVERS = ["8.8.8.8", "208.67.222.222", "<default>"]
 HOSTNAMES = ["www.facebook.com", "www.google.com"]

@@ -7,7 +7,11 @@
 
 """ Task runner """
 
+import logging
+
 from twisted.internet import reactor
+
+LOG = logging.getLogger("TaskRunner")
 
 class TaskRunner(object):
     """ Runs tasks composing the test """
@@ -31,16 +35,18 @@ class TaskRunner(object):
         """check if there are no more operation"""
         return len(self._code) == 0
 
-    def add_operation(self, function, args):
+    def add_operation(self, func, args):
         """Add an operation in _code"""
-        self._code.append((function, args))
+        LOG.info("Add task: %s, %s", func, args)
+        self._code.append((func, args))
 
     def execute(self):
-        """ Execture operations using reactor """
-        # Note: this could also be a method of TaskRunner
+        """ Execute operations using reactor """
+        LOG.info("=== Executing tasks ===")
         if not self.no_more_operations():
-            reactor.callLater(4, self.execute)
+            reactor.callLater(1, self.execute)  # XXX
             for func, args in self.get_next_operations():
+                LOG.info("Execute task: %s, %s", func, args)
                 reactor.callLater(0, func, *args)
         else:
-            reactor.stop()
+            pass #reactor.stop()  # FIXME
