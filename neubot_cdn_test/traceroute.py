@@ -43,9 +43,10 @@ def main():
     def print_result(result):
         """ Print result of name lookup """
         print result
-        reactor.stop()
 
     deferred.addCallback(print_result)
+    d = tracert(sys.argv[1])
+    d.addCallback(print_result)
     reactor.run()
 
 if __name__ == "__main__":

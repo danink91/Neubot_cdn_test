@@ -12,7 +12,7 @@ from twisted.internet import defer
 import sys
 
 
-def tracert(ip_addr):
+def whois(ip_addr):
     """ Performs traceroute"""
     outer_deferred = defer.Deferred()
     def sched_periodic_():
@@ -32,14 +32,14 @@ def tracert(ip_addr):
         if subprocess.PIPE:
             outer_deferred.callback(str(proc.communicate()[0]))
 
-    proc = subprocess.Popen(["whois", ip_addr],
+    proc = subprocess.Popen(["whois", "-h", "whois.radb.net", ip_addr],
                             stdout=subprocess.PIPE)
     sched_periodic_()
     return outer_deferred
 
 def main():
     """ Main function """
-    deferred = tracert(sys.argv[1])
+    deferred = whois(sys.argv[1])
     def print_result(result):
         """ Print result of name lookup """
         print result

@@ -36,6 +36,8 @@ from twisted.names import dns
 import json
 import logging
 import socket
+from time import gmtime, strftime
+
 
 class LookupAnswer(object):
     """ Wrapper for Twisted lookup answer """
@@ -70,6 +72,25 @@ class LookupAnswer(object):
                         },
                     })
         return json.dumps(content, indent=2)
+
+    def dict_repr(self):
+        content = []
+        for elem in self.result[0]:
+            if hasattr(elem, 'type'):
+                if elem.type in (dns.A, dns.AAAA):
+                    content.append({
+                        "time": strftime("%Y-%m-%d %H:%M:%S", gmtime()),
+                        "name": str(elem.name),
+                        "type": getattr(elem, "type"),
+                        "class": elem.cls,
+                        "ttl": elem.ttl,
+                        "auth": elem.auth,
+                        "payload": {
+                            "address" : self._address_to_string(elem),
+                            "ttl": elem.payload.ttl,
+                        },
+                    })
+        return content
 
     def _get_ipvx_addresses(self, expected):
         """ Internal function to get addresses """
@@ -117,6 +138,23 @@ class LookupErrors(object):
                 content.append({"error" : str(elem.value),})
         return json.dumps(content, indent=2)
 
+    def dict_repr(self):
+        content = []
+        for elem in self.result[0]:
+            if hasattr(elem, 'type'):
+                if elem.type in (dns.A, dns.AAAA):
+                    content.append({
+                        "name": str(elem.name),
+                        "type": getattr(elem, "type"),
+                        "class": elem.cls,
+                        "ttl": elem.ttl,
+                        "auth": elem.auth,
+                        "payload": {
+                            "address" : self._address_to_string(elem),
+                            "ttl": elem.payload.ttl,
+                        },
+                    })
+        return content
 
 def lookup_name4(name, server=None):
     """ This function performs the lookup for ipv4 """

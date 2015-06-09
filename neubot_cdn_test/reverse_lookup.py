@@ -39,10 +39,12 @@ import logging
 import socket
 import ipaddress_local
 
+
 class ReverseAnswer(object):
     """This class is the list of Reverse Answers"""
     def __init__(self, result):
         self.result = result
+
     def __str__(self):
         content = []
         for elem in self.result[0]:
@@ -58,6 +60,22 @@ class ReverseAnswer(object):
                         "ttl": elem.payload.ttl, }
                 })
         return json.dumps(content, indent=2)
+
+    def dict_repr(self):
+        content = []
+        for elem in self.result[0]:
+            if elem.type == dns.PTR:
+                content.append({
+                    "name" : str(elem.name),
+                    "type" : getattr(elem, "type"),
+                    "class": elem.cls,
+                    "ttl": elem.ttl,
+                    "auth": elem.auth,
+                    "payload":{
+                        "name" : str(elem.payload.name),
+                        "ttl": elem.payload.ttl, }
+                })
+        return content
 
 class ReverseErrors(object):
     """This class is the list of Reverse Errors"""
@@ -80,6 +98,23 @@ class ReverseErrors(object):
             "auth": str(self.message.value.message.auth),
         })
         return json.dumps(content, indent=2)
+
+    def dict_repr(self):
+        content = []
+        content.append({
+            "id" : str(self.message.value.message.id),
+            "rCode" : str(self.message.value.message.rCode),
+            "maxSize": str(self.message.value.message.maxSize),
+            "answer": str(self.message.value.message.answer),
+            "recDes": str(self.message.value.message.recDes),
+            "recAv": str(self.message.value.message.recAv),
+            "queries": str(self.message.value.message.queries),
+            "authority": str(self.message.value.message.authority),
+            "opCode": str(self.message.value.message.opCode),
+            "ns": str(self.message.value.message.ns),
+            "auth": str(self.message.value.message.auth),
+        })
+        return content
 
 def reverse_ipv6(ipv6):
 
