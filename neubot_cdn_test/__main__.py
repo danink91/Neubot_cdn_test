@@ -11,9 +11,10 @@ from twisted.internet import reactor
 import lookup_name, reverse_lookup, traceroute, whois, \
               task_runner
 import pprint
+import time
 
-DNSSERVERS = ["8.8.8.8", "208.67.222.222", "<default>"]
-HOSTNAMES = ["www.facebook.com", "www.google.com"]
+#DNSSERVERS = ["8.8.8.8", "208.67.222.222", "<default>"]
+#HOSTNAMES = ["www.facebook.com", "www.google.com"]
 
 def op_reverse4(*args):
     """ Reverse resolve A @{address} using @{server} and store the
@@ -148,6 +149,13 @@ def op_initialize(arg):
     """Init task_runner"""
     runner = arg
 
+    with open("../Input/hostnames") as f:
+        HOSTNAMES = f.read().splitlines()
+        print HOSTNAMES
+
+    with open("../Input/dnsservers") as f:
+	    DNSSERVERS = f.read().splitlines()
+
     for server in DNSSERVERS:
         runner.dns_servers.append(server)
     for name in HOSTNAMES:
@@ -181,10 +189,11 @@ def main():
 
     reactor.callLater(0, runner.execute)
     reactor.run()
-    wfile = open('Output/output.txt', 'w')
+    namef ="data"+time.strftime("%Y-%m-%d--%H:%M:%S")
+    wfile = open('../Output/'+namef+'.txt', 'w')
     pprint.pprint(runner.__dict__, wfile)
-
-    with open('Output/data.pkl', 'wb') as output:
+    namef =namef+".pkl"
+    with open('../Output/'+namef, 'wb') as output:
         pickle.dump(runner, output, pickle.HIGHEST_PROTOCOL)
     #pprint.pprint(runner.__dict__)
 

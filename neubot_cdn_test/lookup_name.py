@@ -36,7 +36,7 @@ from twisted.names import dns
 import json
 import logging
 import socket
-from time import gmtime, strftime
+import time
 
 
 class LookupAnswer(object):
@@ -79,7 +79,7 @@ class LookupAnswer(object):
             if hasattr(elem, 'type'):
                 if elem.type in (dns.A, dns.AAAA):
                     content.append({
-                        "time": strftime("%Y-%m-%d %H:%M:%S", gmtime()),
+                        "time": time.strftime("%Y-%m-%d %H:%M:%S"),
                         "name": str(elem.name),
                         "type": getattr(elem, "type"),
                         "class": elem.cls,
