@@ -204,10 +204,10 @@ def main():
     reactor.callLater(0, runner.execute)
     reactor.run()
     namef ="data"+time.strftime("%Y-%m-%d--%H:%M:%S")
-    wfile = open('../Output/'+namef+'.txt', 'w')
+    wfile = open(workdir + '/Output/'+namef+'.txt', 'w')
     pprint.pprint(runner.__dict__, wfile)
     namef =namef+".pkl"
-    with open('../Output/'+namef, 'wb') as output:
+    with open(workdir + '/Output/'+namef, 'wb') as output:
         pickle.dump(runner, output, pickle.HIGHEST_PROTOCOL)
     #pprint.pprint(runner.__dict__)
 
