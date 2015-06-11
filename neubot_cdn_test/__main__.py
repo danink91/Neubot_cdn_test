@@ -8,15 +8,13 @@
 """ Main of the CDN test module """
 
 from twisted.internet import reactor
-from . import lookup_name, reverse_lookup, traceroute, whois, \
+import lookup_name, reverse_lookup, traceroute, whois, \
               task_runner
 import logging
 import pprint
+import time
 
 logging.basicConfig(level=logging.DEBUG)
-
-DNSSERVERS = ["8.8.8.8", "208.67.222.222", "<default>"]
-HOSTNAMES = ["www.facebook.com", "www.google.com"]
 
 def op_reverse4(*args):
     """ Reverse resolve A @{address} using @{server} and store the
@@ -27,14 +25,17 @@ def op_reverse4(*args):
     def print_result(result):
         """ Print result of name revlookup """
         runner.results[server]["ReverseA"][address] = result.dict_repr()
+        runner.decrease_counter()
+        print "op_reverse4: "+server, address, runner
         runner.add_operation(op_traceroute, (address, runner))
 
     def print_error(err):
         """ Print err of name revlookup """
         runner.results[server]["ReverseA"][address] = err.value.dict_repr()
+        runner.decrease_counter()
 
     deferred.addCallbacks(print_result, print_error)
-    print "op_reverse4: "+server, address, runner
+
 
 def op_reverse6(*args):
     """ Reverse resolve A @{address} using @{server} and store the
@@ -45,15 +46,17 @@ def op_reverse6(*args):
     def print_result(result):
         """ Print result of name revlookup """
         runner.results[server]["ReverseAAAA"][address] = result.dict_repr()
+        runner.decrease_counter()
+        print "op_reverse6: "+server, address, runner
         runner.add_operation(op_traceroute, (address, runner))
 
     def print_error(err):
         """ Print err of name revlookup """
         runner.results[server]["ReverseAAAA"][address] = err.value.dict_repr()
-
+        runner.decrease_counter()
 
     deferred.addCallbacks(print_result, print_error)
-    print "op_reverse6: "+server, address, runner
+
 
 def op_resolve4(*args):
     """ Resolve @{name} to A using @{server} and store the
@@ -69,18 +72,22 @@ def op_resolve4(*args):
         """ Print result of name lookup """
         if name == "whoami.akamai.net":
             runner.results["default_nameserver"] = result.dict_repr()
+            runner.decrease_counter()
+            print "op_resolve4: "+server, name, runner
         else:
             runner.results[server]["A"][name] = result.dict_repr()
-
-        for address in result.get_ipv4_addresses():
-            runner.add_operation(op_reverse4, (server, address, runner))
+            runner.decrease_counter()
+            print "op_resolve4: "+server, name, runner
+            for address in result.get_ipv4_addresses():
+                runner.add_operation(op_reverse4, (server, address, runner))
 
     def print_error(err):
         """ Print result of name lookup """
         runner.results[server]["A"][name] = err.value.dict_repr()
+        runner.decrease_counter()
 
     deferred.addCallbacks(print_result, print_error)
-    print "op_resolve4: "+server, name, runner
+
 
 def op_resolve6(*args):
     """ Resolve @{name} to AAAA using @{server} and store the
@@ -94,16 +101,19 @@ def op_resolve6(*args):
     def print_result(result):
         """ Print result of name lookup """
         runner.results[server]["AAAA"][name] = result.dict_repr()
+        runner.decrease_counter()
+        print "op_resolve6: "+server, name, runner
         for address in result.get_ipv6_addresses():
             runner.add_operation(op_reverse6, (server, address, runner))
 
     def print_error(err):
         """ Print result of name lookup """
         runner.results[server]["A"][name] = err.value.dict_repr()
+        runner.decrease_counter()
 
     deferred.addCallbacks(print_result, print_error)
 
-    print "op_resolve6: "+server, name, runner
+
 
 def op_traceroute(*args):
     """Performs traceroute"""
@@ -114,10 +124,12 @@ def op_traceroute(*args):
     def print_result(result):
         """ Print result of traceroute """
         runner.results["traceroute"][address] = result
+        runner.decrease_counter()
         runner.add_operation(op_whois, (address, runner))
+        print "traceroute: "+address, runner
 
     deferred.addCallback(print_result)
-    print "traceroute: "+address, runner
+
 
 def op_whois(*args):
     """Performs whois"""
@@ -128,13 +140,21 @@ def op_whois(*args):
     def print_result(result):
         """ Print result of whois """
         runner.results["whois"][address] = result
+        runner.decrease_counter()
+        print "whois: "+address, runner
 
     deferred.addCallback(print_result)
-    print "whois: "+address, runner
 
 def op_initialize(arg):
     """Init task_runner"""
     runner = arg
+
+    with open("../Input/hostnames") as f:
+        HOSTNAMES = f.read().splitlines()
+        print HOSTNAMES
+
+    with open("../Input/dnsservers") as f:
+	    DNSSERVERS = f.read().splitlines()
 
     for server in DNSSERVERS:
         runner.dns_servers.append(server)
@@ -169,12 +189,13 @@ def main():
 
     reactor.callLater(0, runner.execute)
     reactor.run()
-    wfile = open('Output/output.txt', 'w')
+    namef ="data"+time.strftime("%Y-%m-%d--%H:%M:%S")
+    wfile = open('../Output/'+namef+'.txt', 'w')
     pprint.pprint(runner.__dict__, wfile)
-
-    with open('Output/data.pkl', 'wb') as output:
+    namef =namef+".pkl"
+    with open('../Output/'+namef, 'wb') as output:
         pickle.dump(runner, output, pickle.HIGHEST_PROTOCOL)
-    pprint.pprint(runner.__dict__)
+    #pprint.pprint(runner.__dict__)
 
 
 if __name__ == "__main__":
