@@ -11,7 +11,6 @@ from twisted.internet import reactor
 from twisted.internet import defer
 import sys
 
-
 def tracert(ip_addr):
     """ Performs traceroute"""
     outer_deferred = defer.Deferred()

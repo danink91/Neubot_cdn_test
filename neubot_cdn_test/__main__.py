@@ -10,11 +10,14 @@
 from twisted.internet import reactor
 import lookup_name, reverse_lookup, traceroute, whois, \
               task_runner
+
+import getopt
+import logging
 import pprint
+import sys
 import time
 
-#DNSSERVERS = ["8.8.8.8", "208.67.222.222", "<default>"]
-#HOSTNAMES = ["www.facebook.com", "www.google.com"]
+logging.basicConfig(level=logging.INFO)
 
 def op_reverse4(*args):
     """ Reverse resolve A @{address} using @{server} and store the
@@ -145,15 +148,15 @@ def op_whois(*args):
 
     deferred.addCallback(print_result)
 
-def op_initialize(arg):
+def op_initialize(arg, workdir):
     """Init task_runner"""
     runner = arg
 
-    with open("../Input/hostnames") as f:
+    with open(workdir + "/Input/hostnames") as f:
         HOSTNAMES = f.read().splitlines()
         print HOSTNAMES
 
-    with open("../Input/dnsservers") as f:
+    with open(workdir + "/Input/dnsservers") as f:
 	    DNSSERVERS = f.read().splitlines()
 
     for server in DNSSERVERS:
@@ -175,10 +178,23 @@ def op_initialize(arg):
 
 def main():
     """ Main function """
+    workdir = "."
+    try:
+        options, arguments = getopt.getopt(sys.argv[1:], "d:v")
+    except getopt.error:
+        sys.exit("usage: neubot_cdn_test [-d workdir] [-v]")
+    if arguments:
+        sys.exit("usage: neubot_cdn_test [-d workdir] [-v]")
+    for name, value in options:
+        if name == "-d":
+            workdir = value
+        elif name == "-v":
+            logging.getLogger().setLevel(logging.DEBUG)
+
     import pickle
     runner = task_runner.TaskRunner()
 
-    op_initialize(runner)
+    op_initialize(runner, workdir)
 
     runner.add_operation(op_resolve4, ("<default>", "whoami.akamai.net", runner))
 
@@ -190,13 +206,12 @@ def main():
     reactor.callLater(0, runner.execute)
     reactor.run()
     namef ="data"+time.strftime("%Y-%m-%d--%H:%M:%S")
-    wfile = open('../Output/'+namef+'.txt', 'w')
+    wfile = open(workdir + '/Output/'+namef+'.txt', 'w')
     pprint.pprint(runner.__dict__, wfile)
     namef =namef+".pkl"
-    with open('../Output/'+namef, 'wb') as output:
+    with open(workdir + '/Output/'+namef, 'wb') as output:
         pickle.dump(runner, output, pickle.HIGHEST_PROTOCOL)
     #pprint.pprint(runner.__dict__)
-
 
 if __name__ == "__main__":
     main()
