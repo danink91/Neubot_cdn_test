@@ -17,7 +17,7 @@ import pprint
 import sys
 import time
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 def op_reverse4(*args):
     """ Reverse resolve A @{address} using @{server} and store the
@@ -180,14 +180,16 @@ def main():
     """ Main function """
     workdir = "."
     try:
-        options, arguments = getopt.getopt(sys.argv[1:], "d:")
+        options, arguments = getopt.getopt(sys.argv[1:], "d:v")
     except getopt.error:
-        sys.exit("usage: neubot_cdn_test [-d workdir]")
+        sys.exit("usage: neubot_cdn_test [-d workdir] [-v]")
     if arguments:
-        sys.exit("usage: neubot_cdn_test [-d workdir]")
+        sys.exit("usage: neubot_cdn_test [-d workdir] [-v]")
     for name, value in options:
         if name == "-d":
             workdir = value
+        elif name == "-v":
+            logging.getLogger().setLevel(logging.DEBUG)
 
     import pickle
     runner = task_runner.TaskRunner()
