@@ -24,7 +24,7 @@ class TaskRunner(object):
         self.results = {}
         self._code = []
         self.counter = 0
-        self.maxcounter = 20
+        self.maxcounter = 10
 
     def get_next_operations(self):
         """ Return some operations to run next """
@@ -54,13 +54,13 @@ class TaskRunner(object):
         """ Execute operations using reactor """
         LOG.info("=== Executing tasks ===")
         if not self.no_more_operations():
-            reactor.callLater(0.5, self.execute)
+            reactor.callLater(1, self.execute)
             for func, args in self.get_next_operations():
                 LOG.info("Execute task: %s, %s", func, args)
                 reactor.callLater(0, func, *args)
         else:
             print "no more operation,but counter = ", self.counter
             if self.counter > 0:
-                reactor.callLater(0.5, self.execute)
+                reactor.callLater(1, self.execute)
             else:
                 reactor.stop()
