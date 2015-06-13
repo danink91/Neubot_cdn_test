@@ -140,20 +140,26 @@ class LookupErrors(object):
 
     def dict_repr(self):
         content = []
-        for elem in self.result[0]:
-            if hasattr(elem, 'type'):
-                if elem.type in (dns.A, dns.AAAA):
+        for elem in self.message:
+            if hasattr(elem.value.message, 'rCode'):
+                if elem.value.message.rCode == dns.ENAME:
                     content.append({
-                        "name": str(elem.name),
-                        "type": getattr(elem, "type"),
-                        "class": elem.cls,
-                        "ttl": elem.ttl,
-                        "auth": elem.auth,
-                        "payload": {
-                            "address" : self._address_to_string(elem),
-                            "ttl": elem.payload.ttl,
-                        },
+                        "id" : str(elem.value.message.id),
+                        "rCode" : str(elem.value.message.rCode),
+                        "maxSize": str(elem.value.message.maxSize),
+                        "answer": str(elem.value.message.answer),
+                        "recDes": str(elem.value.message.recDes),
+                        "recAv": str(elem.value.message.recAv),
+                        "queries": str(elem.value.message.queries),
+                        "authority": str(elem.value.message.authority),
+                        "opCode": str(elem.value.message.opCode),
+                        "ns": str(elem.value.message.ns),
+                        "auth": str(elem.value.message.auth),
                     })
+                else:
+                    content.append({"error" : str(elem.value),})
+            else:
+                content.append({"error" : str(elem.value),})
         return content
 
 def lookup_name4(name, server=None):
