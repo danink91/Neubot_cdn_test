@@ -2,8 +2,11 @@
 cd ..
 COUNTER=0
 while [ true ]; do
-  echo $COUNTER
   COUNTER=$((COUNTER+1))
-  python -m neubot_cdn_test $@
-  sleep 300
+  date
+  echo "start test: $COUNTER"
+#chiedere a simo se metto 2>/dev/null poi il -v non mi va
+  python -m neubot_cdn_test $@ 
+  echo "end test: $COUNTER"
+  sleep 1800
 done

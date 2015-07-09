@@ -11,7 +11,7 @@ import logging
 
 from twisted.internet import reactor
 
-LOG = logging.getLogger("TaskRunner")
+#LOG = logging.getLogger("TaskRunner")
 
 class TaskRunner(object):
     """ Runs tasks composing the test """
@@ -29,7 +29,7 @@ class TaskRunner(object):
     def get_next_operations(self):
         """ Return some operations to run next """
         # TODO: use deque for efficiency
-        print "active: ", self.counter
+        logging.debug("Active: %d", self.counter)
         avail = min(self.maxcounter-self.counter, len(self._code))
         retval = self._code[:avail]
         self._code = self._code[avail:]
@@ -47,19 +47,19 @@ class TaskRunner(object):
 
     def add_operation(self, func, args):
         """Add an operation in _code"""
-        LOG.info("Add task: %s, %s", func, args)
+        logging.debug("Add task: %s, %s", func, args)
         self._code.append((func, args))
 
     def execute(self):
         """ Execute operations using reactor """
-        LOG.info("=== Executing tasks ===")
+        logging.debug("=== Executing tasks ===")
         if not self.no_more_operations():
             reactor.callLater(1, self.execute)
             for func, args in self.get_next_operations():
-                LOG.info("Execute task: %s, %s", func, args)
+                logging.debug("Execute task: %s, %s", func, args)
                 reactor.callLater(0, func, *args)
         else:
-            print "no more operation,but counter = ", self.counter
+            logging.debug("no more operation,but counter = %d", self.counter)
             if self.counter > 0:
                 reactor.callLater(1, self.execute)
             else:

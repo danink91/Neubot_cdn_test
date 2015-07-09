@@ -151,7 +151,6 @@ def op_initialize(arg, workdir):
 
     with open(workdir + "/Input/hostnames") as f:
         HOSTNAMES = f.read().splitlines()
-        print HOSTNAMES
 
     with open(workdir + "/Input/dnsservers") as f:
 	    DNSSERVERS = f.read().splitlines()
@@ -175,6 +174,8 @@ def op_initialize(arg, workdir):
 def main():
     """ Main function """
     workdir = "."
+    start_time = time.time()
+    print "test running..."
     try:
         options, arguments = getopt.getopt(sys.argv[1:], "d:v")
     except getopt.error:
@@ -208,6 +209,7 @@ def main():
     with open(workdir + '/Output/'+namef, 'wb') as output:
         pickle.dump(runner, output, pickle.HIGHEST_PROTOCOL)
     #pprint.pprint(runner.__dict__)
+    print("--- %s seconds ---" % (time.time() - start_time))
 
 if __name__ == "__main__":
     main()
