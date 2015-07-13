@@ -9,7 +9,7 @@
 import subprocess
 from twisted.internet import reactor
 from twisted.internet import defer
-import sys
+import sys, os
 
 
 def whois(ip_addr):
@@ -32,8 +32,10 @@ def whois(ip_addr):
         if subprocess.PIPE:
             outer_deferred.callback(str(proc.communicate()[0]))
 
-    proc = subprocess.Popen(["whois", "-h", "whois.radb.net", ip_addr],
-                            stdout=subprocess.PIPE)
+    with open(os.devnull, 'w') as devnull:
+        proc = subprocess.Popen(["whois", "-h", "whois.radb.net", ip_addr],
+                                stdout=subprocess.PIPE,
+                                stderr=devnull)
     sched_periodic_()
     return outer_deferred
 

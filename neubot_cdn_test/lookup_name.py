@@ -34,7 +34,6 @@ from twisted.internet import defer
 from twisted.names import client
 from twisted.names import dns
 import json
-import logging
 import socket
 import time
 
@@ -56,24 +55,11 @@ class LookupAnswer(object):
             raise RuntimeError
 
     def __str__(self):
-        content = []
-        for elem in self.result[0]:
-            if hasattr(elem, 'type'):
-                if elem.type in (dns.A, dns.AAAA):
-                    content.append({
-                        "name": str(elem.name),
-                        "type": getattr(elem, "type"),
-                        "class": elem.cls,
-                        "ttl": elem.ttl,
-                        "auth": elem.auth,
-                        "payload": {
-                            "address" : self._address_to_string(elem),
-                            "ttl": elem.payload.ttl,
-                        },
-                    })
+        content = self.dict_repr()
         return json.dumps(content, indent=2)
 
     def dict_repr(self):
+        """Dictionary representation"""
         content = []
         for elem in self.result[0]:
             if hasattr(elem, 'type'):
@@ -115,30 +101,11 @@ class LookupErrors(object):
         self.message.append(result)
 
     def __str__(self):
-        content = []
-        for elem in self.message:
-            if hasattr(elem.value.message, 'rCode'):
-                if elem.value.message.rCode == dns.ENAME:
-                    content.append({
-                        "id" : str(elem.value.message.id),
-                        "rCode" : str(elem.value.message.rCode),
-                        "maxSize": str(elem.value.message.maxSize),
-                        "answer": str(elem.value.message.answer),
-                        "recDes": str(elem.value.message.recDes),
-                        "recAv": str(elem.value.message.recAv),
-                        "queries": str(elem.value.message.queries),
-                        "authority": str(elem.value.message.authority),
-                        "opCode": str(elem.value.message.opCode),
-                        "ns": str(elem.value.message.ns),
-                        "auth": str(elem.value.message.auth),
-                    })
-                else:
-                    content.append({"error" : str(elem.value),})
-            else:
-                content.append({"error" : str(elem.value),})
+        content = self.dict_repr()
         return json.dumps(content, indent=2)
 
     def dict_repr(self):
+        """Dictionary representation"""
         content = []
         for elem in self.message:
             if hasattr(elem.value.message, 'rCode'):
@@ -206,8 +173,8 @@ def main():
     """ Main function """
     from twisted.internet import reactor
     import sys
-    #deferred = lookup_name4(sys.argv[1])
-    deferred = lookup_name6(sys.argv[1], server="8.8.8.8")
+    deferred = lookup_name4(sys.argv[1], server="208.67.222.222")
+    #deferred = lookup_name6(sys.argv[1], server="8.8.8.8")
     def print_result(result):
         """ Print result of name lookup """
         print result
@@ -216,7 +183,7 @@ def main():
     def print_error(err):
         """ Print error of name lookup """
         print err.value
-        reactor.stop()
+
 
     deferred.addCallbacks(print_result, print_error)
     reactor.run()
