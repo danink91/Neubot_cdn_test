@@ -17,7 +17,6 @@ import pprint
 import sys
 import time
 
-logging.basicConfig(level=logging.INFO)
 
 def op_reverse4(*args):
     """ Reverse resolve A @{address} using @{server} and store the
@@ -70,8 +69,10 @@ def op_resolve4(*args):
     def print_result(result):
         """ Print result of name lookup """
         if name == "whoami.akamai.net":
-            runner.results[server]["A"].setdefault(name, {})
             runner.results["default_nameserver"] = result.dict_repr()
+            runner.decrease_counter()
+        elif name == "myip.opendns.com":
+            runner.results["ip_client"] = result.dict_repr()
             runner.decrease_counter()
         else:
             runner.results[server]["A"].setdefault(name, {})
@@ -79,10 +80,12 @@ def op_resolve4(*args):
             runner.decrease_counter()
             for address in result.get_ipv4_addresses():
                 runner.add_operation(op_reverse4, (server, address, runner))
-                runner.add_operation(op_traceroute, (address, runner))
+                if not address in runner.results["traceroute"]:
+                    runner.add_operation(op_traceroute, (address, runner))
 
     def print_error(err):
         """ Print result of name lookup """
+        runner.results[server]["A"].setdefault(name, {})
         runner.results[server]["A"][name] = err.value.dict_repr()
         runner.decrease_counter()
 
@@ -105,7 +108,8 @@ def op_resolve6(*args):
         runner.decrease_counter()
         for address in result.get_ipv6_addresses():
             runner.add_operation(op_reverse6, (server, address, runner))
-            runner.add_operation(op_traceroute, (address, runner))
+            if not address in runner.results["traceroute"]:
+                runner.add_operation(op_traceroute, (address, runner))
 
     def print_error(err):
         """ Print result of name lookup """
@@ -160,6 +164,7 @@ def op_initialize(arg, workdir):
     for name in HOSTNAMES:
         runner.names.append(name)
     runner.results.setdefault("default_nameserver", "")
+    runner.results.setdefault("ip_client", "")
     runner.results.setdefault("traceroute", {})
     runner.results.setdefault("whois", {})
     for server in runner.dns_servers:
@@ -192,8 +197,9 @@ def main():
     runner = task_runner.TaskRunner()
 
     op_initialize(runner, workdir)
-
+    
     runner.add_operation(op_resolve4, ("<default>", "whoami.akamai.net", runner))
+    runner.add_operation(op_resolve4, ("208.67.222.222", "myip.opendns.com", runner))
 
     for server in runner.dns_servers:
         for name in runner.names:
@@ -208,7 +214,6 @@ def main():
     namef =namef+".pkl"
     with open(workdir + '/Output/'+namef, 'wb') as output:
         pickle.dump(runner, output, pickle.HIGHEST_PROTOCOL)
-    #pprint.pprint(runner.__dict__)
     print("--- %s seconds ---" % (time.time() - start_time))
 
 if __name__ == "__main__":

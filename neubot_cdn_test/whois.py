@@ -33,7 +33,7 @@ def whois(ip_addr):
             outer_deferred.callback(str(proc.communicate()[0]))
 
     with open(os.devnull, 'w') as devnull:
-        proc = subprocess.Popen(["whois", "-h", "whois.radb.net", ip_addr],
+        proc = subprocess.Popen(["whois", "-h", "v4.whois.cymru.com", ip_addr],
                                 stdout=subprocess.PIPE,
                                 stderr=devnull)
     sched_periodic_()
