@@ -22,15 +22,16 @@ def op_reverse4(*args):
     """ Reverse resolve A @{address} using @{server} and store the
         result in the @{destination} dictionary """
     server, address, runner = args
-    runner.results[server]["ReverseA"].setdefault(address, {})
     deferred = reverse_lookup.reverse_lookup(address)
     def print_result(result):
         """ Print result of name revlookup """
+        runner.results[server]["ReverseA"].setdefault(address, {})
         runner.results[server]["ReverseA"][address] = result.dict_repr()
         runner.decrease_counter()
 
     def print_error(err):
         """ Print err of name revlookup """
+        runner.results[server]["ReverseA"].setdefault(address, {})
         runner.results[server]["ReverseA"][address] = err.value.dict_repr()
         runner.decrease_counter()
 
@@ -41,15 +42,16 @@ def op_reverse6(*args):
     """ Reverse resolve A @{address} using @{server} and store the
         result in the @{destination} dictionary """
     server, address, runner = args
-    runner.results[server]["ReverseAAAA"].setdefault(address, {})
     deferred = reverse_lookup.reverse_lookup(address)
     def print_result(result):
         """ Print result of name revlookup """
+        runner.results[server]["ReverseAAAA"].setdefault(address, {})
         runner.results[server]["ReverseAAAA"][address] = result.dict_repr()
         runner.decrease_counter()
 
     def print_error(err):
         """ Print err of name revlookup """
+        runner.results[server]["ReverseAAAA"].setdefault(address, {})
         runner.results[server]["ReverseAAAA"][address] = err.value.dict_repr()
         runner.decrease_counter()
 
@@ -124,11 +126,10 @@ def op_resolve6(*args):
 def op_traceroute(*args):
     """Performs traceroute"""
     address, runner = args
-    runner.results.setdefault("traceroute", {})
-    runner.results["traceroute"].setdefault(address, {})
     deferred = traceroute.tracert(address)
     def print_result(result):
         """ Print result of traceroute """
+        runner.results["traceroute"].setdefault(address, {})
         runner.results["traceroute"][address] = result
         runner.decrease_counter()
         runner.add_operation(op_whois, (address, runner))
@@ -139,11 +140,10 @@ def op_traceroute(*args):
 def op_whois(*args):
     """Performs whois"""
     address, runner = args
-    runner.results.setdefault("whois", {})
-    runner.results["whois"].setdefault(address, {})
     deferred = whois.whois(address)
     def print_result(result):
         """ Print result of whois """
+        runner.results["whois"].setdefault(address, {})
         runner.results["whois"][address] = result
         runner.decrease_counter()
 
