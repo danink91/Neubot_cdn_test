@@ -65,6 +65,7 @@ class LookupAnswer(object):
             if hasattr(elem, 'type'):
                 if elem.type in (dns.A, dns.AAAA):
                     content.append({
+                        "utime": int(time.time()),
                         "time": time.strftime("%Y-%m-%d %H:%M:%S"),
                         "name": str(elem.name),
                         "type": getattr(elem, "type"),
@@ -111,6 +112,8 @@ class LookupErrors(object):
             if hasattr(elem.value.message, 'rCode'):
                 if elem.value.message.rCode == dns.ENAME:
                     content.append({
+                        "utime": int(time.time()),
+                        "time": time.strftime("%Y-%m-%d %H:%M:%S"),
                         "id" : str(elem.value.message.id),
                         "rCode" : str(elem.value.message.rCode),
                         "maxSize": str(elem.value.message.maxSize),
