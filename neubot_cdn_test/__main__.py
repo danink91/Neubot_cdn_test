@@ -15,7 +15,7 @@ import getopt
 import logging
 import pprint
 import sys
-import time
+import time,json
 
 
 def op_reverse4(*args):
@@ -234,11 +234,15 @@ def main():
     reactor.callLater(0, runner.execute)
     reactor.run()
     namef ="data"+time.strftime("%Y-%m-%d--%H:%M:%S")
-    wfile = open(workdir + '/Output/'+namef+'.txt', 'w')
-    pprint.pprint(runner.__dict__, wfile)
-    namef =namef+".pkl"
-    with open(workdir + '/Output/'+namef, 'wb') as output:
-        pickle.dump(runner, output, pickle.HIGHEST_PROTOCOL)
+    #pprint
+    pfile = open(workdir + '/Output/'+namef+'.txt', 'w')
+    pprint.pprint(runner.__dict__, pfile)
+    #json
+    wfile = open(workdir + '/Output/'+namef+'.dat', 'w')
+    json.dump(runner.results, wfile, indent=2)
+    #pkl
+    with open(workdir + '/Output/'+namef+'.pkl', 'wb') as output:
+       pickle.dump(runner, output, pickle.HIGHEST_PROTOCOL)
     print("--- %s seconds ---" % (time.time() - start_time))
 
 if __name__ == "__main__":
