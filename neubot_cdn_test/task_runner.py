@@ -7,8 +7,15 @@
 
 """ Task runner """
 
-import logging
-
+import logging,json
+import sys
+from twisted.web.client import Agent
+from twisted.web.http_headers import Headers
+from twisted.web.iweb import IBodyProducer
+from twisted.internet import reactor
+from twisted.internet.defer import Deferred, succeed
+from twisted.internet.protocol import Protocol
+from zope.interface import implements
 from twisted.internet import reactor
 
 #LOG = logging.getLogger("TaskRunner")
@@ -50,6 +57,47 @@ class TaskRunner(object):
         logging.debug("Add task: %s, %s", func, args)
         self._code.append((func, args))
 
+    def send(self):
+        logging.debug("Send task:")
+        class StringProducer(object):
+            implements(IBodyProducer)
+         
+            def __init__(self, body):
+                self.body = body
+                self.length = len(body)
+         
+            def startProducing(self, consumer):
+                consumer.write(self.body)
+                return succeed(None)
+         
+            def pauseProducing(self):
+                pass
+         
+            def stopProducing(self):
+                pass
+
+
+        def cbResponse(response):
+            print 'Response code:', response.code
+            if (response.code == 200):
+                finished = Deferred()
+                print "json Sent"
+            reactor.stop()
+         
+            
+
+        URL = 'http://localhost:5000'
+        obj = json.dumps(self.results)
+        agent = Agent(reactor)
+        d = agent.request(
+                'POST',
+                URL,
+                Headers({'Content-Type': ['application/json']}),
+                StringProducer(obj))
+        d.addCallback(cbResponse)
+        
+
+
     def execute(self):
         """ Execute operations using reactor """
         logging.debug("=== Executing tasks ===")
@@ -63,4 +111,5 @@ class TaskRunner(object):
             if self.counter > 0:
                 reactor.callLater(1, self.execute)
             else:
-                reactor.stop()
+                reactor.callLater(1, self.send)
+
