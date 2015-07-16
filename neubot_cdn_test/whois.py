@@ -41,14 +41,18 @@ def whois(ip_addr):
 
 def main():
     """ Main function """
-    deferred = whois(sys.argv[1])
-    def print_result(result):
-        """ Print result of name lookup """
-        print result
-        reactor.stop()
+    def do_whois():
+        deferred = whois(sys.argv[1])
+        def print_result(result):
+            """ Print result of whois """
+            print result
+            reactor.stop()
 
-    deferred.addCallback(print_result)
+        deferred.addCallback(print_result)
+    
+    reactor.callLater(0.0, do_whois)
     reactor.run()
+
 
 if __name__ == "__main__":
     main()
