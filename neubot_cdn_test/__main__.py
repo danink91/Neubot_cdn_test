@@ -146,27 +146,34 @@ def op_resolve6(*args):
 def op_traceroute(*args):
     """Performs traceroute"""
     address, runner = args
-    deferred = traceroute.tracert(address)
-    def print_result(result):
-        """ Print result of traceroute """
-        runner.results["traceroute"].setdefault(address, {})
-        runner.results["traceroute"][address] = result
-        runner.decrease_counter()
+    def do_trace():
+        deferred = traceroute.tracert(address)
+        def print_result(result):
+            """ Print result of traceroute """
+            runner.results["traceroute"].setdefault(address, {})
+            runner.results["traceroute"][address] = result
+            runner.decrease_counter()
 
-    deferred.addCallback(print_result)
+        deferred.addCallback(print_result)
+    
+    reactor.callLater(0.0, do_trace)
 
 
 def op_whois(*args):
     """Performs whois"""
     address, runner = args
-    deferred = whois.whois(address)
-    def print_result(result):
-        """ Print result of whois """
-        runner.results["whois"].setdefault(address, {})
-        runner.results["whois"][address] = result
-        runner.decrease_counter()
+    def do_whois():
+        deferred = whois.whois(address)
+        def print_result(result):
+            """ Print result of whois """
+            runner.results["whois"].setdefault(address, {})
+            runner.results["whois"][address] = result
+            runner.decrease_counter()
 
-    deferred.addCallback(print_result)
+        deferred.addCallback(print_result)
+    
+    reactor.callLater(0.0, do_whois)
+
 
 def op_initialize(arg, workdir):
     """Init task_runner"""
