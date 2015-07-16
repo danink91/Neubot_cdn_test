@@ -6,26 +6,19 @@
 #
 
 """ Performs reverse lookup of an address
-
 Example usage:
-
 from twisted.internet import reactor
 import sys
 def main():
-
     deferred = reverse_lookup(sys.argv[1])
-
     def print_result(result):
         print result
         reactor.stop()
-
     def print_error(err):
         print err
         reactor.stop()
-
     deferred.addCallbacks(print_result,print_error)
     reactor.run()
-
 if __name__ == "__main__":
     main()
 """
@@ -77,19 +70,22 @@ class ReverseErrors(object):
     def dict_repr(self):
         """Dictionary representation"""
         content = []
-        content.append({
-            "id" : str(self.message.value.message.id),
-            "rCode" : str(self.message.value.message.rCode),
-            "maxSize": str(self.message.value.message.maxSize),
-            "answer": str(self.message.value.message.answer),
-            "recDes": str(self.message.value.message.recDes),
-            "recAv": str(self.message.value.message.recAv),
-            "queries": str(self.message.value.message.queries),
-            "authority": str(self.message.value.message.authority),
-            "opCode": str(self.message.value.message.opCode),
-            "ns": str(self.message.value.message.ns),
-            "auth": str(self.message.value.message.auth),
-        })
+        if hasattr(self.message.value.message, 'rCode'):
+            content.append({
+                "id" : str(self.message.value.message.id),
+                "rCode" : str(self.message.value.message.rCode),
+                "maxSize": str(self.message.value.message.maxSize),
+                "answer": str(self.message.value.message.answer),
+                "recDes": str(self.message.value.message.recDes),
+                "recAv": str(self.message.value.message.recAv),
+                "queries": str(self.message.value.message.queries),
+                "authority": str(self.message.value.message.authority),
+                "opCode": str(self.message.value.message.opCode),
+                "ns": str(self.message.value.message.ns),
+                "auth": str(self.message.value.message.auth),
+            })
+        else:
+            content.append({"error" : str(self.message.value),})
         return content
 
 def reverse_ipv6(ipv6):
@@ -137,7 +133,7 @@ def reverse_lookup(address):
         outer_deferred.errback(ReverseErrors(err))
 
     rev_ip = reverse_ip_address(address=address)
-    inner_deferred = client.lookupPointer(rev_ip)
+    inner_deferred = client.lookupPointer(rev_ip, timeout=[2,5])
     inner_deferred.addCallbacks(wrap_result, wrap_error)
     return outer_deferred
 
@@ -145,19 +141,21 @@ def main():
     """ Main function """
     from twisted.internet import reactor
     import sys
-    deferred = reverse_lookup(sys.argv[1])
+    def do_lookup():
+        deferred = reverse_lookup(sys.argv[1])
+        def print_result(result):
+            """ Print result of name lookup """
+            print result
+            reactor.stop()
 
-    def print_result(result):
-        """ Print result of name lookup """
-        print result
-        reactor.stop()
+        def print_error(err):
+            """ Print error of name lookup """
+            print err.value
+            reactor.stop()
 
-    def print_error(err):
-        """ Print err of name lookup """
-        print err.value
-        reactor.stop()
-
-    deferred.addCallbacks(print_result, print_error)
+        deferred.addCallbacks(print_result, print_error)
+    
+    reactor.callLater(0.0, do_lookup)
     reactor.run()
 
 if __name__ == "__main__":

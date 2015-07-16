@@ -148,7 +148,7 @@ def lookup_name4(name, server=None):
         """ Wrap error returned by Twisted """
         outer_deferred.errback(LookupErrors(err))
 
-    inner_deferred = resolver.lookupAddress(name=name)
+    inner_deferred = resolver.lookupAddress(name=name, timeout=[2,5])
     inner_deferred.addCallbacks(wrap_result, wrap_error)
     return outer_deferred
 
@@ -168,7 +168,7 @@ def lookup_name6(name, server=None):
         """ Wrap error returned by Twisted """
         outer_deferred.errback(LookupErrors(err))
 
-    inner_deferred = resolver.lookupIPV6Address(name=name)
+    inner_deferred = resolver.lookupIPV6Address(name=name, timeout=[2,5])
     inner_deferred.addCallbacks(wrap_result, wrap_error)
     return outer_deferred
 
@@ -176,19 +176,22 @@ def main():
     """ Main function """
     from twisted.internet import reactor
     import sys
-    deferred = lookup_name4(sys.argv[1], server="208.67.222.222")
-    #deferred = lookup_name6(sys.argv[1], server="8.8.8.8")
-    def print_result(result):
-        """ Print result of name lookup """
-        print result
-        reactor.stop()
+    def do_lookup():
+        deferred = lookup_name4(sys.argv[1], server="208.67.222.222")
+        #deferred = lookup_name6(sys.argv[1], server="8.8.8.8")
+        def print_result(result):
+            """ Print result of name lookup """
+            print result
+            reactor.stop()
 
-    def print_error(err):
-        """ Print error of name lookup """
-        print err.value
+        def print_error(err):
+            """ Print error of name lookup """
+            print err.value
+            reactor.stop()
 
-
-    deferred.addCallbacks(print_result, print_error)
+        deferred.addCallbacks(print_result, print_error)
+    
+    reactor.callLater(0.0, do_lookup)
     reactor.run()
 
 if __name__ == "__main__":
