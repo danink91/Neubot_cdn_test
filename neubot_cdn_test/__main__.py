@@ -22,40 +22,46 @@ def op_reverse4(*args):
     """ Reverse resolve A @{address} using @{server} and store the
         result in the @{destination} dictionary """
     server, address, runner = args
-    deferred = reverse_lookup.reverse_lookup(address)
-    def print_result(result):
-        """ Print result of name revlookup """
-        runner.results[server]["ReverseA"].setdefault(address, {})
-        runner.results[server]["ReverseA"][address] = result.dict_repr()
-        runner.decrease_counter()
+    def do_revlookup():
+        deferred = reverse_lookup.reverse_lookup(address)
+        def print_result(result):
+            """ Print result of name revlookup """
+            runner.results["reverse"].setdefault(address, {})
+            runner.results["reverse"][address] = result.dict_repr()
+            runner.decrease_counter()
 
-    def print_error(err):
-        """ Print err of name revlookup """
-        runner.results[server]["ReverseA"].setdefault(address, {})
-        runner.results[server]["ReverseA"][address] = err.value.dict_repr()
-        runner.decrease_counter()
+        def print_error(err):
+            """ Print err of name revlookup """
+            runner.results["reverse"].setdefault(address, {})
+            runner.results["reverse"][address] = err.value.dict_repr()
+            runner.decrease_counter()
 
-    deferred.addCallbacks(print_result, print_error)
+        deferred.addCallbacks(print_result, print_error)
+    
+    reactor.callLater(0.0, do_revlookup)
 
 
 def op_reverse6(*args):
     """ Reverse resolve A @{address} using @{server} and store the
         result in the @{destination} dictionary """
     server, address, runner = args
-    deferred = reverse_lookup.reverse_lookup(address)
-    def print_result(result):
-        """ Print result of name revlookup """
-        runner.results[server]["ReverseAAAA"].setdefault(address, {})
-        runner.results[server]["ReverseAAAA"][address] = result.dict_repr()
-        runner.decrease_counter()
+    def do_revlookup():
+        deferred = reverse_lookup.reverse_lookup(address)
+        def print_result(result):
+            """ Print result of name revlookup """
+            runner.results["reverse"].setdefault(address, {})
+            runner.results["reverse"][address] = result.dict_repr()
+            runner.decrease_counter()
 
-    def print_error(err):
-        """ Print err of name revlookup """
-        runner.results[server]["ReverseAAAA"].setdefault(address, {})
-        runner.results[server]["ReverseAAAA"][address] = err.value.dict_repr()
-        runner.decrease_counter()
+        def print_error(err):
+            """ Print err of name revlookup """
+            runner.results["reverse"].setdefault(address, {})
+            runner.results["reverse"][address] = err.value.dict_repr()
+            runner.decrease_counter()
 
-    deferred.addCallbacks(print_result, print_error)
+        deferred.addCallbacks(print_result, print_error)
+    
+    reactor.callLater(0.0, do_revlookup)
 
 
 def op_resolve4(*args):
@@ -63,64 +69,78 @@ def op_resolve4(*args):
         result in the @{destination} dictionary """
     # TODO: move here code to carefully access dictionaries?
     server, name, runner = args
-    if server != "<default>":
-        deferred = lookup_name.lookup_name4(name, server=server)
-    else:
-        deferred = lookup_name.lookup_name4(name)
-
-    def print_result(result):
-        """ Print result of name lookup """
-        if name == "whoami.akamai.net":
-            runner.results["default_nameserver"] = result.dict_repr()
-            runner.decrease_counter()
-        elif name == "myip.opendns.com":
-            runner.results["ip_client"] = result.dict_repr()
-            runner.decrease_counter()
+    
+    def do_lookup():
+        if server != "<default>":
+            deferred = lookup_name.lookup_name4(name, server=server)
         else:
+            deferred = lookup_name.lookup_name4(name)
+
+        def print_result(result):
+            """ Print result of name lookup """
+            if name == "whoami.akamai.net":
+                runner.results["default_nameserver"] = result.dict_repr()
+                runner.decrease_counter()
+            elif name == "myip.opendns.com":
+                runner.results["ip_client"] = result.dict_repr()
+                runner.decrease_counter()
+            else:
+                runner.results[server]["A"].setdefault(name, {})
+                runner.results[server]["A"][name] = result.dict_repr()
+                runner.decrease_counter()
+                for address in result.get_ipv4_addresses():
+                    if not address in runner.results["reverse"]:
+                        runner.add_operation(op_reverse4, (server, address, runner))
+                    if not address in runner.results["traceroute"]:
+                        runner.add_operation(op_traceroute, (address, runner))
+                    if not address in runner.results["whois"]:
+                        runner.add_operation(op_whois, (address, runner))
+
+        def print_error(err):
+            """ Print result of name lookup """
             runner.results[server]["A"].setdefault(name, {})
-            runner.results[server]["A"][name] = result.dict_repr()
+            runner.results[server]["A"][name] = err.value.dict_repr()
             runner.decrease_counter()
-            for address in result.get_ipv4_addresses():
-                runner.add_operation(op_reverse4, (server, address, runner))
-                if not address in runner.results["traceroute"]:
-                    runner.add_operation(op_traceroute, (address, runner))
 
-    def print_error(err):
-        """ Print result of name lookup """
-        runner.results[server]["A"].setdefault(name, {})
-        runner.results[server]["A"][name] = err.value.dict_repr()
-        runner.decrease_counter()
 
-    deferred.addCallbacks(print_result, print_error)
+        deferred.addCallbacks(print_result, print_error)
+    
+    reactor.callLater(0.0, do_lookup)
 
 
 def op_resolve6(*args):
     """ Resolve @{name} to AAAA using @{server} and store the
         result in the @{destination} dictionary """
     server, name, runner = args
-    if server != "<default>":
-        deferred = lookup_name.lookup_name6(name, server=server)
-    else:
-        deferred = lookup_name.lookup_name6(name)
+    def do_lookup():
+        if server != "<default>":
+            deferred = lookup_name.lookup_name6(name, server=server)
+        else:
+            deferred = lookup_name.lookup_name6(name)
+        def print_result(result):
+            """ Print result of name lookup """
+            runner.results[server]["AAAA"].setdefault(name, {})
+            runner.results[server]["AAAA"][name] = result.dict_repr()
+            runner.decrease_counter()
+            for address in result.get_ipv6_addresses():
+                if not address in runner.results["reverse"]:
+                    runner.add_operation(op_reverse6, (server, address, runner))
+                if not address in runner.results["traceroute"]:
+                    runner.add_operation(op_traceroute, (address, runner))
+                if not address in runner.results["whois"]:
+                    runner.add_operation(op_whois, (address, runner))
+                    
 
-    def print_result(result):
-        """ Print result of name lookup """
-        runner.results[server]["AAAA"].setdefault(name, {})
-        runner.results[server]["AAAA"][name] = result.dict_repr()
-        runner.decrease_counter()
-        for address in result.get_ipv6_addresses():
-            runner.add_operation(op_reverse6, (server, address, runner))
-            if not address in runner.results["traceroute"]:
-                runner.add_operation(op_traceroute, (address, runner))
+        def print_error(err):
+            """ Print result of name lookup """
+            runner.results[server]["AAAA"].setdefault(name, {})
+            runner.results[server]["AAAA"][name] = err.value.dict_repr()
+            runner.decrease_counter()
 
-    def print_error(err):
-        """ Print result of name lookup """
-        runner.results[server]["AAAA"].setdefault(name, {})
-        runner.results[server]["AAAA"][name] = err.value.dict_repr()
-        runner.decrease_counter()
 
-    deferred.addCallbacks(print_result, print_error)
-
+        deferred.addCallbacks(print_result, print_error)
+    
+    reactor.callLater(0.0, do_lookup)
 
 
 def op_traceroute(*args):
@@ -132,7 +152,6 @@ def op_traceroute(*args):
         runner.results["traceroute"].setdefault(address, {})
         runner.results["traceroute"][address] = result
         runner.decrease_counter()
-        runner.add_operation(op_whois, (address, runner))
 
     deferred.addCallback(print_result)
 
@@ -166,14 +185,13 @@ def op_initialize(arg, workdir):
     runner.results.setdefault("default_nameserver", "")
     runner.results.setdefault("ip_client", "")
     runner.results.setdefault("traceroute", {})
+    runner.results.setdefault("reverse", {})
     runner.results.setdefault("whois", {})
     for server in runner.dns_servers:
         for name in runner.names:
             runner.results.setdefault(server, {})
             runner.results[server].setdefault("A", {})
             runner.results[server].setdefault("AAAA", {})
-            runner.results[server].setdefault("ReverseA", {})
-            runner.results[server].setdefault("ReverseAAAA", {})
 
 
 def main():

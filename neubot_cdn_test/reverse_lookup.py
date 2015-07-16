@@ -141,7 +141,7 @@ def main():
     """ Main function """
     from twisted.internet import reactor
     import sys
-    def do_lookup():
+    def do_revlookup():
         deferred = reverse_lookup(sys.argv[1])
         def print_result(result):
             """ Print result of name lookup """
@@ -155,7 +155,7 @@ def main():
 
         deferred.addCallbacks(print_result, print_error)
     
-    reactor.callLater(0.0, do_lookup)
+    reactor.callLater(0.0, do_revlookup)
     reactor.run()
 
 if __name__ == "__main__":
