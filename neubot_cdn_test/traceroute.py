@@ -12,7 +12,7 @@ from twisted.internet import defer
 import sys, os
 
 def tracert(ip_addr):
-    """ Performs traceroute"""  
+    """ Performs traceroute"""
     outer_deferred = defer.Deferred()
     def sched_periodic_():
         """ Schedule periodic task """
@@ -41,6 +41,7 @@ def tracert(ip_addr):
 def main():
     """ Main function """
     def do_trace():
+        """perf traceroute"""
         deferred = tracert(sys.argv[1])
         def print_result(result):
             """ Print result of traceroute """
@@ -48,7 +49,7 @@ def main():
             reactor.stop()
 
         deferred.addCallback(print_result)
-    
+
     reactor.callLater(0.0, do_trace)
     reactor.run()
 

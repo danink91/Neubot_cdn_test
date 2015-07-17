@@ -4,32 +4,7 @@
 # Neubot CDN test is free software. See AUTHORS and LICENSE for
 # more information on the copying conditions.
 #
-
-""" Performs reverse lookup of an address
-
-Example usage:
-
-from twisted.internet import reactor
-import sys
-def main():
-
-    deferred = lookup_name("8.8.8.8", sys.argv[1])
-    def print_result(result):
-        print result
-        reactor.stop()
-
-    def print_error(err):
-        x=LookupErrors(err)
-        outer_deferred.callback(x)
-
-    deferred.addCallbacks(print_result,print_error)
-    reactor.run()
-
-if __name__ == "__main__":
-    main()
-"""
-
-from twisted.names import error
+"""Lookup name module"""
 from twisted.internet import defer
 from twisted.names import client
 from twisted.names import dns
@@ -148,7 +123,7 @@ def lookup_name4(name, server=None):
         """ Wrap error returned by Twisted """
         outer_deferred.errback(LookupErrors(err))
 
-    inner_deferred = resolver.lookupAddress(name=name, timeout=[2,5])
+    inner_deferred = resolver.lookupAddress(name=name, timeout=[2, 5])
     inner_deferred.addCallbacks(wrap_result, wrap_error)
     return outer_deferred
 
@@ -168,15 +143,18 @@ def lookup_name6(name, server=None):
         """ Wrap error returned by Twisted """
         outer_deferred.errback(LookupErrors(err))
 
-    inner_deferred = resolver.lookupIPV6Address(name=name, timeout=[2,5])
+    inner_deferred = resolver.lookupIPV6Address(name=name, timeout=[2, 5])
     inner_deferred.addCallbacks(wrap_result, wrap_error)
     return outer_deferred
 
+
+
 def main():
-    """ Main function """
+    """ example usage"""
     from twisted.internet import reactor
     import sys
     def do_lookup():
+        """Perform the lookup"""
         deferred = lookup_name4(sys.argv[1], server="208.67.222.222")
         #deferred = lookup_name6(sys.argv[1], server="8.8.8.8")
         def print_result(result):
@@ -190,7 +168,7 @@ def main():
             reactor.stop()
 
         deferred.addCallbacks(print_result, print_error)
-    
+
     reactor.callLater(0.0, do_lookup)
     reactor.run()
 

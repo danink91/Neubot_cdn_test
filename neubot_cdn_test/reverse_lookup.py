@@ -5,28 +5,11 @@
 # more information on the copying conditions.
 #
 
-""" Performs reverse lookup of an address
-Example usage:
-from twisted.internet import reactor
-import sys
-def main():
-    deferred = reverse_lookup(sys.argv[1])
-    def print_result(result):
-        print result
-        reactor.stop()
-    def print_error(err):
-        print err
-        reactor.stop()
-    deferred.addCallbacks(print_result,print_error)
-    reactor.run()
-if __name__ == "__main__":
-    main()
-"""
+""" Performs reverse lookup of an address"""
 
 from twisted.internet import defer
 from twisted.names import client
 from twisted.names import dns
-from twisted.names import error
 import json
 import socket
 import ipaddress_local
@@ -133,15 +116,16 @@ def reverse_lookup(address):
         outer_deferred.errback(ReverseErrors(err))
 
     rev_ip = reverse_ip_address(address=address)
-    inner_deferred = client.lookupPointer(rev_ip, timeout=[2,5])
+    inner_deferred = client.lookupPointer(rev_ip, timeout=[2, 5])
     inner_deferred.addCallbacks(wrap_result, wrap_error)
     return outer_deferred
 
 def main():
-    """ Main function """
+    """ Main function example usage """
     from twisted.internet import reactor
     import sys
     def do_revlookup():
+        """do the rev lookup"""
         deferred = reverse_lookup(sys.argv[1])
         def print_result(result):
             """ Print result of name lookup """
@@ -154,7 +138,7 @@ def main():
             reactor.stop()
 
         deferred.addCallbacks(print_result, print_error)
-    
+
     reactor.callLater(0.0, do_revlookup)
     reactor.run()
 

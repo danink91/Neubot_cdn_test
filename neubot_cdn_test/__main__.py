@@ -15,7 +15,7 @@ import getopt
 import logging
 import pprint
 import sys
-import time,json
+import time, json
 
 
 def op_reverse4(*args):
@@ -23,6 +23,7 @@ def op_reverse4(*args):
         result in the @{destination} dictionary """
     server, address, runner = args
     def do_revlookup():
+        """do the rev lookup"""
         deferred = reverse_lookup.reverse_lookup(address)
         def print_result(result):
             """ Print result of name revlookup """
@@ -37,7 +38,7 @@ def op_reverse4(*args):
             runner.decrease_counter()
 
         deferred.addCallbacks(print_result, print_error)
-    
+
     reactor.callLater(0.0, do_revlookup)
 
 
@@ -46,6 +47,7 @@ def op_reverse6(*args):
         result in the @{destination} dictionary """
     server, address, runner = args
     def do_revlookup():
+        """do the rev lookup"""
         deferred = reverse_lookup.reverse_lookup(address)
         def print_result(result):
             """ Print result of name revlookup """
@@ -60,7 +62,7 @@ def op_reverse6(*args):
             runner.decrease_counter()
 
         deferred.addCallbacks(print_result, print_error)
-    
+
     reactor.callLater(0.0, do_revlookup)
 
 
@@ -69,8 +71,9 @@ def op_resolve4(*args):
         result in the @{destination} dictionary """
     # TODO: move here code to carefully access dictionaries?
     server, name, runner = args
-    
+
     def do_lookup():
+        """Perform the lookup"""
         if server != "<default>":
             deferred = lookup_name.lookup_name4(name, server=server)
         else:
@@ -102,9 +105,8 @@ def op_resolve4(*args):
             runner.results[server]["A"][name] = err.value.dict_repr()
             runner.decrease_counter()
 
-
         deferred.addCallbacks(print_result, print_error)
-    
+
     reactor.callLater(0.0, do_lookup)
 
 
@@ -113,6 +115,7 @@ def op_resolve6(*args):
         result in the @{destination} dictionary """
     server, name, runner = args
     def do_lookup():
+        """Perform the lookup"""
         if server != "<default>":
             deferred = lookup_name.lookup_name6(name, server=server)
         else:
@@ -129,7 +132,6 @@ def op_resolve6(*args):
                     runner.add_operation(op_traceroute, (address, runner))
                 if not address in runner.results["whois"]:
                     runner.add_operation(op_whois, (address, runner))
-                    
 
         def print_error(err):
             """ Print result of name lookup """
@@ -137,9 +139,8 @@ def op_resolve6(*args):
             runner.results[server]["AAAA"][name] = err.value.dict_repr()
             runner.decrease_counter()
 
-
         deferred.addCallbacks(print_result, print_error)
-    
+
     reactor.callLater(0.0, do_lookup)
 
 
@@ -147,6 +148,7 @@ def op_traceroute(*args):
     """Performs traceroute"""
     address, runner = args
     def do_trace():
+        """perf traceroute"""
         deferred = traceroute.tracert(address)
         def print_result(result):
             """ Print result of traceroute """
@@ -155,7 +157,7 @@ def op_traceroute(*args):
             runner.decrease_counter()
 
         deferred.addCallback(print_result)
-    
+
     reactor.callLater(0.0, do_trace)
 
 
@@ -163,6 +165,7 @@ def op_whois(*args):
     """Performs whois"""
     address, runner = args
     def do_whois():
+        """perf whois"""
         deferred = whois.whois(address)
         def print_result(result):
             """ Print result of whois """
@@ -171,7 +174,7 @@ def op_whois(*args):
             runner.decrease_counter()
 
         deferred.addCallback(print_result)
-    
+
     reactor.callLater(0.0, do_whois)
 
 
@@ -179,15 +182,15 @@ def op_initialize(arg, workdir):
     """Init task_runner"""
     runner = arg
 
-    with open(workdir + "/Input/hostnames") as f:
-        HOSTNAMES = f.read().splitlines()
+    with open(workdir + "/Input/hostnames") as fhost:
+        hostnames = fhost.read().splitlines()
 
-    with open(workdir + "/Input/dnsservers") as f:
-	    DNSSERVERS = f.read().splitlines()
+    with open(workdir + "/Input/dnsservers") as fserver:
+        dnsservers = fserver.read().splitlines()
 
-    for server in DNSSERVERS:
+    for server in dnsservers:
         runner.dns_servers.append(server)
-    for name in HOSTNAMES:
+    for name in hostnames:
         runner.names.append(name)
     runner.results.setdefault("default_nameserver", "")
     runner.results.setdefault("ip_client", "")
@@ -222,7 +225,7 @@ def main():
     runner = task_runner.TaskRunner()
 
     op_initialize(runner, workdir)
-    
+
     runner.add_operation(op_resolve4, ("<default>", "whoami.akamai.net", runner))
     runner.add_operation(op_resolve4, ("208.67.222.222", "myip.opendns.com", runner))
 
@@ -233,16 +236,19 @@ def main():
 
     reactor.callLater(0, runner.execute)
     reactor.run()
-    namef ="data"+time.strftime("%Y-%m-%d--%H:%M:%S")
+    namef = "data"+time.strftime("%Y-%m-%d--%H:%M:%S")
     #pprint
     pfile = open(workdir + '/Output/'+namef+'.txt', 'w')
     pprint.pprint(runner.__dict__, pfile)
+    pfile.close()
     #json
     wfile = open(workdir + '/Output/'+namef+'.dat', 'w')
     json.dump(runner.results, wfile, indent=2)
+    wfile.close()
     #pkl
-    with open(workdir + '/Output/'+namef+'.pkl', 'wb') as output:
-       pickle.dump(runner, output, pickle.HIGHEST_PROTOCOL)
+    ppfile = open(workdir + '/Output/'+namef+'.pkl', 'wb')
+    pickle.dump(runner, ppfile, pickle.HIGHEST_PROTOCOL)
+    ppfile.close()
     print("--- %s seconds ---" % (time.time() - start_time))
 
 if __name__ == "__main__":

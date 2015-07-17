@@ -42,6 +42,7 @@ def whois(ip_addr):
 def main():
     """ Main function """
     def do_whois():
+        """perf whois"""
         deferred = whois(sys.argv[1])
         def print_result(result):
             """ Print result of whois """
@@ -49,7 +50,7 @@ def main():
             reactor.stop()
 
         deferred.addCallback(print_result)
-    
+
     reactor.callLater(0.0, do_whois)
     reactor.run()
 

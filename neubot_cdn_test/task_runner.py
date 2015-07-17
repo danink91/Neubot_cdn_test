@@ -7,18 +7,13 @@
 
 """ Task runner """
 
-import logging,json
-import sys
+import logging, json
 from twisted.web.client import Agent
 from twisted.web.http_headers import Headers
 from twisted.web.iweb import IBodyProducer
 from twisted.internet import reactor
-from twisted.internet.defer import Deferred, succeed
-from twisted.internet.protocol import Protocol
+from twisted.internet.defer import succeed
 from zope.interface import implements
-from twisted.internet import reactor
-
-#LOG = logging.getLogger("TaskRunner")
 
 class TaskRunner(object):
     """ Runs tasks composing the test """
@@ -42,7 +37,6 @@ class TaskRunner(object):
         retval = self._code[:avail]
         self._code = self._code[avail:]
         self.counter = self.counter+avail
-
         return retval
 
     def decrease_counter(self):
@@ -59,57 +53,59 @@ class TaskRunner(object):
         self._code.append((func, args))
 
     def send(self):
+        """Send results to server"""
         logging.debug("Send task:")
         class StringProducer(object):
+            """build the body for http"""
             implements(IBodyProducer)
-         
+
             def __init__(self, body):
                 self.body = body
                 self.length = len(body)
-         
+
             def startProducing(self, consumer):
+                """start"""
                 consumer.write(self.body)
                 return succeed(None)
-         
+
             def pauseProducing(self):
+                """pause"""
                 pass
-         
+
             def stopProducing(self):
+                """stop"""
                 pass
 
-
-        def cbResponse(response):
+        def recv_response(response):
+            """Recv response from server"""
             print 'Response code:', response.code
-            if (response.code == 200):
-                finished = Deferred()
+            if response.code == 200:
                 print "json Sent"
             reactor.stop()
-       
-        def cbErr(err):
+
+        def recv_err(err):
+            """Some error occurs contacting the server"""
             print "timeout"
             print err.value
             self.error_send = True
-            reactor.stop() 
-            
+            reactor.stop()
 
-        URL = 'http://localhost:5000'
-        self.results.setdefault("dns_servers", []) 
+        url = 'http://localhost:5000'
+        self.results.setdefault("dns_servers", [])
         for server in self.dns_servers:
             self.results["dns_servers"].append(server)
-        self.results.setdefault("names", [])   
+        self.results.setdefault("names", [])
         for name in self.names:
             self.results["names"].append(name)
-            
+
         obj = json.dumps(self.results)
-        agent = Agent(reactor,connectTimeout=10)
-        d = agent.request(
+        agent = Agent(reactor, connectTimeout=10)
+        defer = agent.request(
                 'POST',
-                URL,
+                url,
                 Headers({'Content-Type': ['application/json']}),
                 StringProducer(obj))
-        d.addCallbacks(cbResponse,cbErr)
-        
-
+        defer.addCallbacks(recv_response, recv_err)
 
     def execute(self):
         """ Execute operations using reactor """
