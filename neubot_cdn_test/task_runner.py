@@ -32,6 +32,7 @@ class TaskRunner(object):
         self._code = []
         self.counter = 0
         self.maxcounter = 10
+        self.error_send = False
 
     def get_next_operations(self):
         """ Return some operations to run next """
@@ -83,18 +84,30 @@ class TaskRunner(object):
                 finished = Deferred()
                 print "json Sent"
             reactor.stop()
-         
+       
+        def cbErr(err):
+            print "timeout"
+            print err.value
+            self.error_send = True
+            reactor.stop() 
             
 
         URL = 'http://localhost:5000'
+        self.results.setdefault("dns_servers", []) 
+        for server in self.dns_servers:
+            self.results["dns_servers"].append(server)
+        self.results.setdefault("names", [])   
+        for name in self.names:
+            self.results["names"].append(name)
+            
         obj = json.dumps(self.results)
-        agent = Agent(reactor)
+        agent = Agent(reactor,connectTimeout=5)
         d = agent.request(
                 'POST',
                 URL,
                 Headers({'Content-Type': ['application/json']}),
                 StringProducer(obj))
-        d.addCallback(cbResponse)
+        d.addCallbacks(cbResponse,cbErr)
         
 
 
