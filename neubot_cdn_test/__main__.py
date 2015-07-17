@@ -21,7 +21,7 @@ import time, json
 def op_reverse4(*args):
     """ Reverse resolve A @{address} using @{server} and store the
         result in the @{destination} dictionary """
-    server, address, runner = args
+    address, runner = args
     def do_revlookup():
         """do the rev lookup"""
         deferred = reverse_lookup.reverse_lookup(address)
@@ -45,7 +45,7 @@ def op_reverse4(*args):
 def op_reverse6(*args):
     """ Reverse resolve A @{address} using @{server} and store the
         result in the @{destination} dictionary """
-    server, address, runner = args
+    address, runner = args
     def do_revlookup():
         """do the rev lookup"""
         deferred = reverse_lookup.reverse_lookup(address)
@@ -93,7 +93,7 @@ def op_resolve4(*args):
                 runner.decrease_counter()
                 for address in result.get_ipv4_addresses():
                     if not address in runner.results["reverse"]:
-                        runner.add_operation(op_reverse4, (server, address, runner))
+                        runner.add_operation(op_reverse4, (address, runner))
                     if not address in runner.results["traceroute"]:
                         runner.add_operation(op_traceroute, (address, runner))
                     if not address in runner.results["whois"]:
@@ -127,7 +127,7 @@ def op_resolve6(*args):
             runner.decrease_counter()
             for address in result.get_ipv6_addresses():
                 if not address in runner.results["reverse"]:
-                    runner.add_operation(op_reverse6, (server, address, runner))
+                    runner.add_operation(op_reverse6, (address, runner))
                 if not address in runner.results["traceroute"]:
                     runner.add_operation(op_traceroute, (address, runner))
                 if not address in runner.results["whois"]:
