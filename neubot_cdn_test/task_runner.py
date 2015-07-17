@@ -89,7 +89,7 @@ class TaskRunner(object):
             print err.value
             self.error_send = True
             reactor.stop()
-
+        #FIXME change localhost with the correct url
         url = 'http://localhost:5000'
         self.results.setdefault("dns_servers", [])
         for server in self.dns_servers:
