@@ -101,7 +101,7 @@ class TaskRunner(object):
             self.results["names"].append(name)
             
         obj = json.dumps(self.results)
-        agent = Agent(reactor,connectTimeout=5)
+        agent = Agent(reactor,connectTimeout=10)
         d = agent.request(
                 'POST',
                 URL,
