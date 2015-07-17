@@ -23,13 +23,22 @@ http.createServer(function (req, res) {
         
         try {
            json = JSON.parse(body);
-           if(json.hasOwnProperty('ip_client') && json.hasOwnProperty('traceroute') && json.hasOwnProperty('reverse') && json.hasOwnProperty('whois') && json.hasOwnProperty('default_nameserver')){
+           
+        } catch (e) {
+            console.info('Content-Type is not application/json');
+            res.writeHead(400, {'Content-Type': 'text/plain'});
+            res.end('Error: Invalid Content-Type\n');
+            return;
+        }
+        
+        if(json.hasOwnProperty('ip_client') && json.hasOwnProperty('traceroute') && json.hasOwnProperty('reverse') && json.hasOwnProperty('whois') && json.hasOwnProperty('default_nameserver')){
                 for(var myKey in json) {
                     if (myKey=="ip_client")
                     {
-                         var ip_client=json[myKey][0]["payload"][0]["address"];
-                    }        
-                 }
+                         var ip_client=json[myKey][0]["payload"]["address"];
+                    } 
+             }
+
             }
             else
             {
@@ -38,13 +47,6 @@ http.createServer(function (req, res) {
                 res.end('Error: Invalid Content-Type\n');
                 return;
             }
-           
-        } catch (e) {
-            console.info('Content-Type is not application/json');
-            res.writeHead(400, {'Content-Type': 'text/plain'});
-            res.end('Error: Invalid Content-Type\n');
-            return;
-        }
         
         var d = new Date().getTime();
         var fs = require('fs');
