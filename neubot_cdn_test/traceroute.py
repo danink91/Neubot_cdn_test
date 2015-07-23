@@ -16,7 +16,7 @@ def tracert(ip_addr):
     outer_deferred = defer.Deferred()
     def sched_periodic_():
         """ Schedule periodic task """
-        reactor.callLater(3, periodic_impl_)
+        reactor.callLater(2, periodic_impl_)
 
     def periodic_impl_():
         """ Periodically monitor subprocess (impl) """

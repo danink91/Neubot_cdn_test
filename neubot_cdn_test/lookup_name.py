@@ -123,7 +123,7 @@ def lookup_name4(name, server=None):
         """ Wrap error returned by Twisted """
         outer_deferred.errback(LookupErrors(err))
 
-    inner_deferred = resolver.lookupAddress(name=name, timeout=[5, 10, 15])
+    inner_deferred = resolver.lookupAddress(name=name, timeout=[5, 10, 20])
     inner_deferred.addCallbacks(wrap_result, wrap_error)
     return outer_deferred
 
@@ -143,7 +143,7 @@ def lookup_name6(name, server=None):
         """ Wrap error returned by Twisted """
         outer_deferred.errback(LookupErrors(err))
 
-    inner_deferred = resolver.lookupIPV6Address(name=name, timeout=[5, 10, 15])
+    inner_deferred = resolver.lookupIPV6Address(name=name, timeout=[5, 10, 20])
     inner_deferred.addCallbacks(wrap_result, wrap_error)
     return outer_deferred
 
