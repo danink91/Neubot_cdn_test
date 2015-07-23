@@ -13,7 +13,7 @@ import sys, os
 
 
 def whois(ip_addr):
-    """ Performs traceroute"""
+    """ Performs whois"""
     outer_deferred = defer.Deferred()
     def sched_periodic_():
         """ Schedule periodic task """

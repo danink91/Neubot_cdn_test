@@ -116,7 +116,7 @@ def reverse_lookup(address):
         outer_deferred.errback(ReverseErrors(err))
 
     rev_ip = reverse_ip_address(address=address)
-    inner_deferred = client.lookupPointer(rev_ip, timeout=[2, 5])
+    inner_deferred = client.lookupPointer(rev_ip, timeout=[5, 10, 20])
     inner_deferred.addCallbacks(wrap_result, wrap_error)
     return outer_deferred
 

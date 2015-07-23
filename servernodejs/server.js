@@ -31,23 +31,16 @@ http.createServer(function (req, res) {
             return;
         }
         
-        if(json.hasOwnProperty('ip_client') && json.hasOwnProperty('traceroute') && json.hasOwnProperty('reverse') && json.hasOwnProperty('whois') && json.hasOwnProperty('default_nameserver')){
-                for(var myKey in json) {
-                    if (myKey=="ip_client")
-                    {
-                         var ip_client=json[myKey][0]["payload"]["address"];
-                    } 
-             }
-
-            }
-            else
-            {
-                console.info('Incorrect structure for received json');
-                res.writeHead(400, {'Content-Type': 'text/plain'});
-                res.end('Error: Invalid Content-Type\n');
-                return;
-            }
-        
+        if(!json.hasOwnProperty('names') || !json.hasOwnProperty('dnsservers') || !json.hasOwnProperty('results') || !json["results"].hasOwnProperty('ip_client') || !json["results"].hasOwnProperty('traceroute') || !json["results"].hasOwnProperty('reverse') || !json["results"].hasOwnProperty('whois') || !json["results"].hasOwnProperty('default_nameserver'))
+        {
+            console.info('Incorrect structure for received json');
+            res.writeHead(400, {'Content-Type': 'text/plain'});
+            res.end('Error: Invalid Content-Type\n');
+            return;                        
+ 
+        }
+        var ip_client=json["results"]["ip_client"][0]["payload"]["address"];
+            
         var d = new Date().getTime();
         var fs = require('fs');
         var dir = './'+ ip_client;
@@ -60,12 +53,11 @@ http.createServer(function (req, res) {
             }
 
             console.log("The file is saved!");
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(body);
         });
         
-        console.info("Sending data");
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(body);
     });
-}).listen(5000);
+}).listen(5000, '0.0.0.0');
 
 console.info('Server running at http://localhost:5000/');

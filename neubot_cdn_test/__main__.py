@@ -243,7 +243,8 @@ def main():
     pfile.close()
     #json
     wfile = open(workdir + '/Output/'+namef+'.dat', 'w')
-    json.dump(runner.results, wfile, indent=2)
+    json.dump({"names": runner.names, "dnsservers": runner.dns_servers, "results": runner.results}, wfile, indent=2)
+    #json.dump(runner.results, wfile, indent=2)
     wfile.close()
     #pkl
     ppfile = open(workdir + '/Output/'+namef+'.pkl', 'wb')

@@ -8,5 +8,5 @@ while [ true ]; do
   python -m neubot_cdn_test $@
   echo "end test: $COUNTER at"
   date
-  sleep 1800
+  sleep 1500
 done

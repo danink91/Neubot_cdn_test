@@ -26,7 +26,7 @@ class TaskRunner(object):
         self.results = {}
         self._code = []
         self.counter = 0
-        self.maxcounter = 10
+        self.maxcounter = 20
         self.error_send = False
 
     def get_next_operations(self):
@@ -80,7 +80,7 @@ class TaskRunner(object):
             """Recv response from server"""
             print 'Response code:', response.code
             if response.code == 200:
-                print "json Sent"
+                print "json sent correctly"
             reactor.stop()
 
         def recv_err(err):
@@ -91,15 +91,9 @@ class TaskRunner(object):
             reactor.stop()
         #FIXME change localhost with the correct url
         url = 'http://localhost:5000'
-        self.results.setdefault("dns_servers", [])
-        for server in self.dns_servers:
-            self.results["dns_servers"].append(server)
-        self.results.setdefault("names", [])
-        for name in self.names:
-            self.results["names"].append(name)
 
-        obj = json.dumps(self.results)
-        agent = Agent(reactor, connectTimeout=10)
+        obj= json.dumps({"names": self.names, "dnsservers": self.dns_servers, "results": self.results})
+        agent = Agent(reactor, connectTimeout=60)
         defer = agent.request(
                 'POST',
                 url,
