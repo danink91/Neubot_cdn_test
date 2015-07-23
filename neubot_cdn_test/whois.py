@@ -9,15 +9,15 @@
 import subprocess
 from twisted.internet import reactor
 from twisted.internet import defer
-import sys, os
+import sys, os, time
 
-
-def whois(ip_addr):
+def whois(ip_addr, start = time.time()):
     """ Performs whois"""
     outer_deferred = defer.Deferred()
+    
     def sched_periodic_():
         """ Schedule periodic task """
-        reactor.callLater(3, periodic_impl_)
+        reactor.callLater(1, periodic_impl_)
 
     def periodic_impl_():
         """ Periodically monitor subprocess (impl) """
@@ -25,7 +25,10 @@ def whois(ip_addr):
         if exitcode is not None:
             final_state_()
         else:
-            sched_periodic_()
+            if time.time()-start >=15:
+                final_state()    
+            else:
+                sched_periodic_()
 
     def final_state_():
         """ Final state """
